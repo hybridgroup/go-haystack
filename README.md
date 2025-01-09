@@ -1,5 +1,7 @@
 # go-haystack
 
+![Go Haystack gopher](./images/go-haystack.png)
+
 An easy-to-use and easy-to-setup custom FindMy network using [OpenHaystack](https://github.com/seemoo-lab/openhaystack) using [macless-haystack](https://github.com/dchristl/macless-haystack) but with tools written in Go, no Python required.
 
 ## Supported hardware
