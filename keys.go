@@ -6,6 +6,7 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
+	"strings"
 )
 
 func generateKey() (string, string, string) {
@@ -35,6 +36,11 @@ func generateKey() (string, string, string) {
 	// Hash the public key using SHA-256
 	hash := sha256.Sum256(publicKeyBytes)
 	hashBase64 := base64.StdEncoding.EncodeToString(hash[:])
+
+	// make sure not '/' in the base64 string
+	if strings.Contains(hashBase64, "/") {
+		panic("key generation failed because there was a / in the b64 of the hashed pubkey. try again.")
+	}
 
 	return privateKeyBase64, publicKeyBase64, hashBase64
 }
