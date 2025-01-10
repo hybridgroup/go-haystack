@@ -6,14 +6,17 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
+	"errors"
 	"strings"
 )
 
-func generateKey() (string, string, string) {
+var errInvalidHash = errors.New("Hash contains '/'")
+
+func generateKey() (string, string, string, error) {
 	// Generate ECDSA private key using P-224 curve
 	pk, err := ecdsa.GenerateKey(elliptic.P224(), rand.Reader)
 	if err != nil {
-		panic(err)
+		return "", "", "", err
 	}
 
 	// Extract the raw private key bytes
@@ -21,7 +24,7 @@ func generateKey() (string, string, string) {
 
 	// Ensure the private key is 28 bytes long (P-224 curve)
 	if len(privateKeyBytes) != 28 {
-		panic("Private key is not 28 bytes long")
+		return "", "", "", errors.New("Private key is not 28 bytes long")
 	}
 
 	// Encode the raw private key to Base64
@@ -39,8 +42,8 @@ func generateKey() (string, string, string) {
 
 	// make sure not '/' in the base64 string
 	if strings.Contains(hashBase64, "/") {
-		panic("key generation failed because there was a / in the b64 of the hashed pubkey. try again.")
+		return "", "", "", errInvalidHash
 	}
 
-	return privateKeyBase64, publicKeyBase64, hashBase64
+	return privateKeyBase64, publicKeyBase64, hashBase64, nil
 }

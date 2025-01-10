@@ -72,18 +72,18 @@ go install github.com/hybridgroup/go-haystack
 1. Generate keys for a device
 
 ```shell
-go-haystack -name=DEVICENAME
+go-haystack keys DEVICENAME
 ```
 
 The keys will be saved in a file named `DEVICENAME.keys` and the configuration file for Haystack will be saved in `DEVICENAME.json`. Replace "DEVICENAME" with whatever you want to name the actual device.
 
 
-2. Flash the hardware with the target name of your device and those keys
+2. Flash the hardware with the TinyGo target and the name of your device.
 
 For example:
 
 ```shell
-./flash.sh nano-rp2040 DEVICENAME.keys
+go-haystack flash nano-rp2040 DEVICENAME
 ```
 
 This will use TinyGo to compile the firmware using your keys, and then flash it to the device. See [https://tinygo.org/getting-started/overview/](https://tinygo.org/getting-started/overview/) for more information about TinyGo.

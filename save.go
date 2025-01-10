@@ -8,10 +8,10 @@ import (
 	"text/template"
 )
 
-func saveKeys(name string, priv string, pub string, hash string) {
+func saveKeys(name string, priv string, pub string, hash string) error {
 	f, err := os.Create(name + ".keys")
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	defer f.Close()
@@ -19,6 +19,8 @@ func saveKeys(name string, priv string, pub string, hash string) {
 	f.Write([]byte(fmt.Sprintf("Private key: %s\n", priv)))
 	f.Write([]byte(fmt.Sprintf("Advertisement key: %s\n", pub)))
 	f.Write([]byte(fmt.Sprintf("Hashed adv key: %s\n", hash)))
+
+	return nil
 }
 
 const deviceTemplate = `[
@@ -42,15 +44,15 @@ const deviceTemplate = `[
 ]
 `
 
-func saveDevice(name string, priv string) {
+func saveDevice(name string, priv string) error {
 	t, err := template.New("device").Parse(deviceTemplate)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	f, err := os.Create(name + ".json")
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	defer f.Close()
@@ -61,8 +63,10 @@ func saveDevice(name string, priv string) {
 		"PrivateKey": priv,
 	})
 	if err != nil {
-		panic(err)
+		return err
 	}
+
+	return nil
 }
 
 // Returns an int >= min, < max
