@@ -1,12 +1,11 @@
-// Firmware to advertise a FindMy compatible device.
-// aka AirTag
-// see https://github.com/biemster/FindMy
+// Firmware to advertise a FindMy compatible device aka AirTag
+// see https://github.com/biemster/FindMy for more information.
 //
 // To build:
-// tinygo flash -target nano-rp2040 -ldflags="-X main.AdvertisingKey='SGVsbG8sIFdvcmxkIQ=='" ./examples/findmy
+// tinygo flash -target nano-rp2040 -ldflags="-X main.AdvertisingKey='SGVsbG8sIFdvcmxkIQ=='" .
 //
 // For Linux:
-// go run ./examples/findmy SGVsbG8sIFdvcmxkIQ==
+// go run . SGVsbG8sIFdvcmxkIQ==
 package main
 
 import (
@@ -20,11 +19,12 @@ import (
 var adapter = bluetooth.DefaultAdapter
 
 func main() {
-	time.Sleep(2 * time.Second) // wait for USB serial to be available
+	// wait for USB serial to be available
+	time.Sleep(2 * time.Second)
 
 	key, err := getKeyData()
 	if err != nil {
-		panic("failed to get key data: " + err.Error())
+		fail("failed to get key data: " + err.Error())
 	}
 	println("key is", AdvertisingKey, "(", len(key), "bytes)")
 
@@ -35,22 +35,25 @@ func main() {
 	}
 
 	must("enable BLE stack", adapter.Enable())
-	adapter.SetRandomAddress(bluetooth.MAC{key[5], key[4], key[3], key[2], key[1], key[0] | 0xC0})
-	adv := adapter.DefaultAdvertisement()
 
-	println("advertising...")
+	// Set the address to the first 6 bytes of the public key.
+	adapter.SetRandomAddress(bluetooth.MAC{key[5], key[4], key[3], key[2], key[1], key[0] | 0xC0})
+
+	println("configure advertising...")
+	adv := adapter.DefaultAdvertisement()
 	must("config adv", adv.Configure(opts))
 
-	println("starting...")
+	println("start advertising...")
 	must("start adv", adv.Start())
 
 	address, _ := adapter.Address()
 	for {
-		println("FindMy /", address.MAC.String())
+		println("FindMy device using", address.MAC.String())
 		time.Sleep(time.Second)
 	}
 }
 
+// getKeyData returns the public key data from the base64 encoded string.
 func getKeyData() ([]byte, error) {
 	val, err := base64.StdEncoding.DecodeString(AdvertisingKey)
 	if err != nil {
@@ -63,22 +66,50 @@ func getKeyData() ([]byte, error) {
 	return val, nil
 }
 
+const (
+	// Apple, Inc.
+	appleCompanyID = 0x004C
+
+	// Offline Finding type
+	findMyPayloadType = 0x12
+
+	// Length of the payload
+	findMyPayloadLength = 0x19
+
+	// Status byte
+	findMyStatus = 0x10
+
+	// Hint byte
+	findMyHint = 0x00
+)
+
+// findMyData creates the ManufacturerDataElement for the advertising data used by FindMy devices.
+// See https://adamcatley.com/AirTag.html#advertising-data
 func findMyData(keyData []byte) bluetooth.ManufacturerDataElement {
 	data := make([]byte, 0, 27)
-	data = append(data, 0x12, 0x19)        // Offline Finding type and length
-	data = append(data, 0x10)              // state
-	data = append(data, keyData[6:]...)    // copy last 22 bytes of public key
-	data = append(data, (keyData[0] >> 6)) // First two bits
-	data = append(data, 0x00)              // Hint (0x00)
+	data = append(data, findMyPayloadType, findMyPayloadLength)
+	data = append(data, findMyStatus)
+	data = append(data, keyData[6:]...)    // copy last 22 bytes of advertising key
+	data = append(data, (keyData[0] >> 6)) // first two bits of advertising key
+	data = append(data, findMyHint)
 
 	return bluetooth.ManufacturerDataElement{
-		CompanyID: 0x004C, // Apple, Inc.
+		CompanyID: appleCompanyID,
 		Data:      data,
 	}
 }
 
+// must calls a function and fails if an error occurs.
 func must(action string, err error) {
 	if err != nil {
-		panic("failed to " + action + ": " + err.Error())
+		fail("failed to " + action + ": " + err.Error())
+	}
+}
+
+// fail prints a message over and over forever.
+func fail(msg string) {
+	for {
+		println(msg)
+		time.Sleep(time.Second)
 	}
 }
