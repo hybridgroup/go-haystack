@@ -6,6 +6,8 @@ Go Haystack lets you track personal Bluetooth devices via Apple's massive ["Find
 
 It uses [OpenHaystack](https://github.com/seemoo-lab/openhaystack) together with [Macless-Haystack](https://github.com/dchristl/macless-haystack) to help you setup a custom FindMy network with tools written in Go/TinyGo.
 
+![image of macless-haystack web UI](./images/macless-haystack.png)
+
 ## Supported beacon hardware
 
 This package provides firmware written using [TinyGo](https://tinygo.org/) and the [TinyGo Bluetooth package](https://github.com/tinygo-org/bluetooth).
