@@ -69,6 +69,32 @@ go install github.com/hybridgroup/go-haystack
 
 ## How to use
 
+### Scanning for local devices
+
+```shell
+go-haystack scan
+```
+
+Should return any local devices within range:
+
+```shell
+$ go-haystack scan                                                                                                             
+FE:B0:67:9B:9A:5C -67 10 feb0679b9a5c55b1141c5cc6c8f65224ae9bc6bc2d998ccf5c56a02d
+CE:8B:AD:5F:8A:02 -85 10 ce8bad5f8a0271538ff5afda87498cb067e9a020d6e4167801d55d83
+F6:32:5F:52:00:75 -49 10 f6325f520075e27edc03c925823a10222ec68cb7752554056b1072f7
+FE:B0:67:9B:9A:5C -66 10 feb0679b9a5c55b1141c5cc6c8f65224ae9bc6bc2d998ccf5c56a02d
+CE:8B:AD:5F:8A:02 -81 10 ce8bad5f8a0271538ff5afda87498cb067e9a020d6e4167801d55d83
+F6:32:5F:52:00:75 -55 10 f6325f520075e27edc03c925823a10222ec68cb7752554056b1072f7
+FE:B0:67:9B:9A:5C -63 10 feb0679b9a5c55b1141c5cc6c8f65224ae9bc6bc2d998ccf5c56a02d
+CE:8B:AD:5F:8A:02 -90 10 ce8bad5f8a0271538ff5afda87498cb067e9a020d6e4167801d55d83
+F6:32:5F:52:00:75 -50 10 f6325f520075e27edc03c925823a10222ec68cb7752554056b1072f7
+FE:B0:67:9B:9A:5C -66 10 feb0679b9a5c55b1141c5cc6c8f65224ae9bc6bc2d998ccf5c56a02d
+CE:8B:AD:5F:8A:02 -80 10 ce8bad5f8a0271538ff5afda87498cb067e9a020d6e4167801d55d83
+F6:32:5F:52:00:75 -54 10 f6325f520075e27edc03c925823a10222ec68cb7752554056b1072f7
+```
+
+### Adding a new device
+
 1. Generate keys for a device
 
 ```shell
