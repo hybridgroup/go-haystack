@@ -12,6 +12,8 @@ It uses [OpenHaystack](https://github.com/seemoo-lab/openhaystack) together with
 
 This package provides firmware written using [TinyGo](https://tinygo.org/) and the [TinyGo Bluetooth package](https://github.com/tinygo-org/bluetooth).
 
+![tinygo beacons](./images/tinygo-beacons.jpg)
+
 As a result, any of the following hardware devices should work:
 
 - Adafruit Bluefruit boards using nRF SoftDevice - https://github.com/tinygo-org/bluetooth?tab=readme-ov-file#adafruit-bluefruit-boards
@@ -23,6 +25,14 @@ As a result, any of the following hardware devices should work:
 You can also run the beacon code on any Linux that has Bluetooth hardware, such as a Raspberry Pi or other embedded system.
 
 The beacon code is located in the [firmware](./firmware/) directory.
+
+## TinyScan
+
+Go Haystack also includes TinyScan, a hardware scanner for local devices.
+
+![tinyscan](./images/tinyscan.gif)
+
+The TinyScan code is located in the [tinyscan](./tinyscan/) directory.
 
 ## How to install
 
