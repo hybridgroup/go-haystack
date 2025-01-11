@@ -19,8 +19,17 @@ const (
 	// Hint byte
 	Hint = 0x00
 
-	// Default Status byte
-	DefaultStatus = 0x10
+	// Battery full
+	StatusBatteryFull = 0x10
+
+	// Battery medium
+	StatusBatteryMedium = 0x40
+
+	// Battery low
+	StatusBatteryLow = 0x80
+
+	// Battery critical
+	StatusBatteryCritical = 0xC0
 )
 
 var (
@@ -69,7 +78,7 @@ func ParseData(address bluetooth.Address, data []byte) (byte, []byte, error) {
 func NewData(keyData []byte) bluetooth.ManufacturerDataElement {
 	data := make([]byte, 0, 27)
 	data = append(data, PayloadType, PayloadLength)
-	data = append(data, DefaultStatus)
+	data = append(data, StatusBatteryFull)
 	data = append(data, keyData[6:]...)    // copy last 22 bytes of advertising key
 	data = append(data, (keyData[0] >> 6)) // first two bits of advertising key
 	data = append(data, Hint)
