@@ -88,3 +88,19 @@ func NewData(keyData []byte) bluetooth.ManufacturerDataElement {
 		Data:      data,
 	}
 }
+
+// BatteryStatus returns a string representation of the battery status.
+func BatteryStatus(status byte) string {
+	switch status {
+	case StatusBatteryFull:
+		return "full"
+	case StatusBatteryMedium:
+		return "medium"
+	case StatusBatteryLow:
+		return "low"
+	case StatusBatteryCritical:
+		return "critical"
+	default:
+		return "unknown"
+	}
+}
