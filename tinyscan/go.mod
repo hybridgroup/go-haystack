@@ -3,7 +3,7 @@ module github.com/hybridgroup/go-haystack/tinyscan
 go 1.23.0
 
 require (
-	github.com/hybridgroup/go-haystack v0.0.0-20250111073145-3778f18a1e4f
+	github.com/hybridgroup/go-haystack v0.0.0-20250111104239-708b6c40fe39
 	tinygo.org/x/bluetooth v0.10.1-0.20250110155930-faf2ed3d797d
 	tinygo.org/x/drivers v0.29.0
 	tinygo.org/x/tinyfont v0.5.0

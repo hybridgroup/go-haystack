@@ -44,8 +44,8 @@ func scanHandler(adapter *bluetooth.Adapter, device bluetooth.ScanResult) {
 			terminalOutput("ERROR: failed to parse data:" + err.Error())
 		default:
 			terminalOutput("--------------------------------")
-			terminalOutput(fmt.Sprintf("%s %d", device.Address.String(), device.RSSI))
-			terminalOutput(fmt.Sprintf("%s %s", hex.EncodeToString(key), hex.EncodeToString([]byte{status})))
+			terminalOutput(fmt.Sprintf("%s %d (battery %s)", device.Address.String(), device.RSSI, findmy.BatteryStatus(status)))
+			terminalOutput(hex.EncodeToString(key))
 		}
 	}
 }

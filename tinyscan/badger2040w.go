@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	font = &tinyfont.Picopixel
+	font = &tinyfont.TomThumb
 )
 
 func initTerminal() {
@@ -25,7 +25,7 @@ func initTerminal() {
 	terminal.Configure(&tinyterm.Config{
 		Font:              font,
 		FontHeight:        8,
-		FontOffset:        4,
+		FontOffset:        6,
 		UseSoftwareScroll: true,
 	})
 }
