@@ -6,6 +6,7 @@ import (
 	"image/color"
 	"time"
 
+	"github.com/hybridgroup/go-haystack/lib/findmy"
 	"tinygo.org/x/bluetooth"
 	"tinygo.org/x/tinyterm"
 )
@@ -36,8 +37,8 @@ func main() {
 }
 
 func scanHandler(adapter *bluetooth.Adapter, device bluetooth.ScanResult) {
-	if device.ManufacturerData() != nil && device.ManufacturerData()[0].CompanyID == appleCompanyID {
-		status, key, err := parseData(device.Address, device.ManufacturerData()[0].Data)
+	if device.ManufacturerData() != nil && device.ManufacturerData()[0].CompanyID == findmy.AppleCompanyID {
+		status, key, err := findmy.ParseData(device.Address, device.ManufacturerData()[0].Data)
 		switch {
 		case err != nil:
 			terminalOutput("ERROR: failed to parse data:" + err.Error())
