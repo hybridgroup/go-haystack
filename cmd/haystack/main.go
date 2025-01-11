@@ -16,7 +16,7 @@ func main() {
 
 	args := flag.Args()
 	if len(args) < 1 {
-		fmt.Println("either 'keys' 'flash' or 'scan' subcommand is required.", len(args))
+		fmt.Println("subcommand required. valid subcommands are 'keys' 'flash' 'scan'")
 		return
 	}
 
@@ -31,7 +31,7 @@ func main() {
 		}
 	case "flash":
 		if len(args) < 3 {
-			fmt.Println("Please provide a device target and name")
+			fmt.Println("Please provide a device name and target")
 			return
 		}
 		if err := flashDevice(args[1], args[2], verboseFlag); err != nil {
@@ -42,7 +42,7 @@ func main() {
 			fmt.Println("failed to scan devices:", err)
 		}
 	default:
-		fmt.Println("either 'keys' or 'flash' subcommand is required.")
+		fmt.Println("subcommand required. valid subcommands are 'keys' 'flash' 'scan'")
 		return
 	}
 }

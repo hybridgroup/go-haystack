@@ -119,7 +119,7 @@ The keys will be saved in a file named `DEVICENAME.keys` and the configuration f
 For example:
 
 ```shell
-haystack flash nano-rp2040 DEVICENAME
+haystack flash DEVICENAME nano-rp2040
 ```
 
 This will use TinyGo to compile the firmware using your keys, and then flash it to the device. See [https://tinygo.org/getting-started/overview/](https://tinygo.org/getting-started/overview/) for more information about TinyGo.
