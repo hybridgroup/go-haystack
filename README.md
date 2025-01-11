@@ -74,7 +74,7 @@ See https://github.com/dchristl/macless-haystack/blob/main/README.md#server-setu
 Install the go-haystack command line tool
 
 ```shell
-go install github.com/hybridgroup/go-haystack
+go install github.com/hybridgroup/go-haystack/cmd/haystack
 ```
 
 ## How to use
@@ -82,13 +82,13 @@ go install github.com/hybridgroup/go-haystack
 ### Scanning for local devices
 
 ```shell
-go-haystack scan
+haystack scan
 ```
 
 Should return any local devices within range:
 
 ```shell
-$ go-haystack scan                                                                                                             
+$ haystack scan                                                                                                             
 FE:B0:67:9B:9A:5C -67 10 feb0679b9a5c55b1141c5cc6c8f65224ae9bc6bc2d998ccf5c56a02d
 CE:8B:AD:5F:8A:02 -85 10 ce8bad5f8a0271538ff5afda87498cb067e9a020d6e4167801d55d83
 F6:32:5F:52:00:75 -49 10 f6325f520075e27edc03c925823a10222ec68cb7752554056b1072f7
@@ -108,7 +108,7 @@ F6:32:5F:52:00:75 -54 10 f6325f520075e27edc03c925823a10222ec68cb7752554056b1072f
 1. Generate keys for a device
 
 ```shell
-go-haystack keys DEVICENAME
+haystack keys DEVICENAME
 ```
 
 The keys will be saved in a file named `DEVICENAME.keys` and the configuration file for Haystack will be saved in `DEVICENAME.json`. Replace "DEVICENAME" with whatever you want to name the actual device.
@@ -119,7 +119,7 @@ The keys will be saved in a file named `DEVICENAME.keys` and the configuration f
 For example:
 
 ```shell
-go-haystack flash nano-rp2040 DEVICENAME
+haystack flash nano-rp2040 DEVICENAME
 ```
 
 This will use TinyGo to compile the firmware using your keys, and then flash it to the device. See [https://tinygo.org/getting-started/overview/](https://tinygo.org/getting-started/overview/) for more information about TinyGo.
