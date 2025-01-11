@@ -4,11 +4,11 @@
 
 Go Haystack lets you track personal Bluetooth devices via Apple's massive ["Find My"](https://developer.apple.com/find-my/) network.
 
-It uses [OpenHaystack](https://github.com/seemoo-lab/openhaystack) together with [Macless-Haystack](https://github.com/dchristl/macless-haystack) to help you setup a custom FindMy network with tools written in Go/TinyGo.
+It uses [OpenHaystack](https://github.com/seemoo-lab/openhaystack) together with [Macless-Haystack](https://github.com/dchristl/macless-haystack) to help you setup a custom FindMy network with tools written in Go/TinyGo. No Apple hardware required!
 
 ![image of macless-haystack web UI](./images/macless-haystack.png)
 
-## Supported beacon hardware
+## Build Your Own Beacon
 
 This package provides firmware written using [TinyGo](https://tinygo.org/) and the [TinyGo Bluetooth package](https://github.com/tinygo-org/bluetooth).
 
@@ -32,7 +32,9 @@ Go Haystack also includes TinyScan, a hardware scanner for local devices.
 
 ![tinyscan](./images/tinyscan.gif)
 
-The TinyScan code is located in the [tinyscan](./tinyscan/) directory.
+TinyScan runs on several different microcontrollers boards with Bluetooth and miniature displays, such as those made by [Adafruit](https://www.adafruit.com/) and [Pimoroni](https://shop.pimoroni.com/)
+
+The TinyScan code is located in the [tinyscan](./tinyscan/) directory in this repository.
 
 ## How to install
 
@@ -89,18 +91,14 @@ Should return any local devices within range:
 
 ```shell
 $ haystack scan                                                                                                             
-FE:B0:67:9B:9A:5C -67 10 feb0679b9a5c55b1141c5cc6c8f65224ae9bc6bc2d998ccf5c56a02d
-CE:8B:AD:5F:8A:02 -85 10 ce8bad5f8a0271538ff5afda87498cb067e9a020d6e4167801d55d83
-F6:32:5F:52:00:75 -49 10 f6325f520075e27edc03c925823a10222ec68cb7752554056b1072f7
-FE:B0:67:9B:9A:5C -66 10 feb0679b9a5c55b1141c5cc6c8f65224ae9bc6bc2d998ccf5c56a02d
-CE:8B:AD:5F:8A:02 -81 10 ce8bad5f8a0271538ff5afda87498cb067e9a020d6e4167801d55d83
-F6:32:5F:52:00:75 -55 10 f6325f520075e27edc03c925823a10222ec68cb7752554056b1072f7
-FE:B0:67:9B:9A:5C -63 10 feb0679b9a5c55b1141c5cc6c8f65224ae9bc6bc2d998ccf5c56a02d
-CE:8B:AD:5F:8A:02 -90 10 ce8bad5f8a0271538ff5afda87498cb067e9a020d6e4167801d55d83
-F6:32:5F:52:00:75 -50 10 f6325f520075e27edc03c925823a10222ec68cb7752554056b1072f7
-FE:B0:67:9B:9A:5C -66 10 feb0679b9a5c55b1141c5cc6c8f65224ae9bc6bc2d998ccf5c56a02d
-CE:8B:AD:5F:8A:02 -80 10 ce8bad5f8a0271538ff5afda87498cb067e9a020d6e4167801d55d83
-F6:32:5F:52:00:75 -54 10 f6325f520075e27edc03c925823a10222ec68cb7752554056b1072f7
+CE:8B:AD:5F:8A:02 -53 ce8bad5f8a0271538ff5afda87498cb067e9a020d6e4167801d55d83 - battery full
+FE:B0:67:9B:9A:5C -55 feb0679b9a5c55b1141c5cc6c8f65224ae9bc6bc2d998ccf5c56a02d - battery full
+CE:8B:AD:5F:8A:02 -53 ce8bad5f8a0271538ff5afda87498cb067e9a020d6e4167801d55d83 - battery full
+CE:8B:AD:5F:8A:02 -53 ce8bad5f8a0271538ff5afda87498cb067e9a020d6e4167801d55d83 - battery full
+FE:B0:67:9B:9A:5C -56 feb0679b9a5c55b1141c5cc6c8f65224ae9bc6bc2d998ccf5c56a02d - battery full
+CE:8B:AD:5F:8A:02 -53 ce8bad5f8a0271538ff5afda87498cb067e9a020d6e4167801d55d83 - battery full
+FE:B0:67:9B:9A:5C -56 feb0679b9a5c55b1141c5cc6c8f65224ae9bc6bc2d998ccf5c56a02d - battery full
+CE:8B:AD:5F:8A:02 -53 ce8bad5f8a0271538ff5afda87498cb067e9a020d6e4167801d55d83 - battery full
 ```
 
 ### Adding a new device
