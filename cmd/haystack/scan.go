@@ -21,7 +21,7 @@ func scanDevices(verboseFlag *bool) error {
 				println("failed to parse data:", err)
 				return
 			}
-			println(device.Address.String(), device.RSSI, hex.EncodeToString([]byte{status}), hex.EncodeToString(key))
+			println(device.Address.String(), device.RSSI, hex.EncodeToString(key), "- battery", findmy.BatteryStatus(status))
 		}
 	})
 }

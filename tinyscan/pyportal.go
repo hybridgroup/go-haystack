@@ -4,13 +4,13 @@ package main
 
 import (
 	"tinygo.org/x/drivers/ili9341"
-	"tinygo.org/x/tinyfont/proggy"
+	"tinygo.org/x/tinyfont"
 	"tinygo.org/x/tinyterm"
 	"tinygo.org/x/tinyterm/displays"
 )
 
 var (
-	font = &proggy.TinySZ8pt7b
+	font = &tinyfont.TomThumb
 )
 
 func initTerminal() {
@@ -20,7 +20,7 @@ func initTerminal() {
 	terminal = tinyterm.NewTerminal(display)
 	terminal.Configure(&tinyterm.Config{
 		Font:              font,
-		FontHeight:        10,
+		FontHeight:        8,
 		FontOffset:        6,
 		UseSoftwareScroll: true,
 	})
