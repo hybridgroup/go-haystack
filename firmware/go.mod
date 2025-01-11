@@ -4,7 +4,9 @@ go 1.23.0
 
 require (
 	github.com/hybridgroup/go-haystack v0.0.0-20250111073145-3778f18a1e4f
+	golang.org/x/crypto v0.12.0
 	tinygo.org/x/bluetooth v0.10.1-0.20250110080820-c6dfccb1a90b
+	tinygo.org/x/tinyfs v0.4.0
 )
 
 require (
