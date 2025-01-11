@@ -13,6 +13,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/hybridgroup/go-haystack/lib/findmy"
 	"tinygo.org/x/bluetooth"
 )
 
@@ -31,7 +32,7 @@ func main() {
 	opts := bluetooth.AdvertisementOptions{
 		AdvertisementType: bluetooth.AdvertisingTypeNonConnInd,
 		Interval:          bluetooth.NewDuration(1285000 * time.Microsecond), // 1285ms
-		ManufacturerData:  []bluetooth.ManufacturerDataElement{findMyData(key)},
+		ManufacturerData:  []bluetooth.ManufacturerDataElement{findmy.NewData(key)},
 	}
 
 	must("enable BLE stack", adapter.Enable())
@@ -64,39 +65,6 @@ func getKeyData() ([]byte, error) {
 	}
 
 	return val, nil
-}
-
-const (
-	// Apple, Inc.
-	appleCompanyID = 0x004C
-
-	// Offline Finding type
-	findMyPayloadType = 0x12
-
-	// Length of the payload
-	findMyPayloadLength = 0x19
-
-	// Status byte
-	findMyStatus = 0x10
-
-	// Hint byte
-	findMyHint = 0x00
-)
-
-// findMyData creates the ManufacturerDataElement for the advertising data used by FindMy devices.
-// See https://adamcatley.com/AirTag.html#advertising-data
-func findMyData(keyData []byte) bluetooth.ManufacturerDataElement {
-	data := make([]byte, 0, 27)
-	data = append(data, findMyPayloadType, findMyPayloadLength)
-	data = append(data, findMyStatus)
-	data = append(data, keyData[6:]...)    // copy last 22 bytes of advertising key
-	data = append(data, (keyData[0] >> 6)) // first two bits of advertising key
-	data = append(data, findMyHint)
-
-	return bluetooth.ManufacturerDataElement{
-		CompanyID: appleCompanyID,
-		Data:      data,
-	}
 }
 
 // must calls a function and fails if an error occurs.

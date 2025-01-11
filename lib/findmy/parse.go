@@ -11,13 +11,16 @@ const (
 	AppleCompanyID = 0x004C
 
 	// Offline Finding type
-	FindMyPayloadType = 0x12
+	PayloadType = 0x12
 
 	// Length of the payload
-	FindMyPayloadLength = 0x19
+	PayloadLength = 0x19
 
 	// Hint byte
-	FindMyHint = 0x00
+	Hint = 0x00
+
+	// Default Status byte
+	DefaultStatus = 0x10
 )
 
 var (
@@ -34,15 +37,15 @@ func ParseData(address bluetooth.Address, data []byte) (byte, []byte, error) {
 		return 0, nil, ErrorDataTooShort
 	}
 
-	if data[0] != FindMyPayloadType {
+	if data[0] != PayloadType {
 		return 0, nil, ErrorInvalidPayloadType
 	}
 
-	if data[1] != FindMyPayloadLength {
+	if data[1] != PayloadLength {
 		return 0, nil, ErrorInvalidPayloadLength
 	}
 
-	if data[26] != FindMyHint {
+	if data[26] != Hint {
 		return 0, nil, ErrorInvalidHint
 	}
 
@@ -59,4 +62,20 @@ func ParseData(address bluetooth.Address, data []byte) (byte, []byte, error) {
 	key[5] = address.MAC[0]
 
 	return findMyStatus, key[:], nil
+}
+
+// NewData creates the ManufacturerDataElement for the advertising data used by FindMy devices.
+// See https://adamcatley.com/AirTag.html#advertising-data
+func NewData(keyData []byte) bluetooth.ManufacturerDataElement {
+	data := make([]byte, 0, 27)
+	data = append(data, PayloadType, PayloadLength)
+	data = append(data, DefaultStatus)
+	data = append(data, keyData[6:]...)    // copy last 22 bytes of advertising key
+	data = append(data, (keyData[0] >> 6)) // first two bits of advertising key
+	data = append(data, Hint)
+
+	return bluetooth.ManufacturerDataElement{
+		CompanyID: AppleCompanyID,
+		Data:      data,
+	}
 }
