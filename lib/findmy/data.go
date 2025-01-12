@@ -10,8 +10,11 @@ const (
 	// Apple, Inc.
 	AppleCompanyID = 0x004C
 
-	// Offline Finding type
-	PayloadType = 0x12
+	// Not yet registered
+	PayloadUnregistered = 0x07
+
+	// Registered for offline finding
+	PayloadTypeRegistered = 0x12
 
 	// Length of the payload
 	PayloadLength = 0x19
@@ -33,21 +36,32 @@ const (
 )
 
 var (
-	ErrorDataTooShort         = errors.New("data is too short")
-	ErrorInvalidPayloadType   = errors.New("invalid payload type")
-	ErrorInvalidPayloadLength = errors.New("invalid payload length")
-	ErrorInvalidHint          = errors.New("invalid hint")
+	ErrorNoData               = errors.New("findmy: no data")
+	ErrorDataTooShort         = errors.New("findmy: data is too short")
+	ErrorUnregistered         = errors.New("findmy: unregistered device")
+	ErrorInvalidPayloadType   = errors.New("findmy: invalid payload type")
+	ErrorInvalidPayloadLength = errors.New("findmy: invalid payload length")
+	ErrorInvalidHint          = errors.New("findmy: invalid hint")
 )
 
 // ParseData parses the data from a FindMy device.
 // It returns the status byte, the advertising key, and an error if any.
 func ParseData(mac bluetooth.MAC, data []byte) (byte, []byte, error) {
-	if len(data) < 27 {
-		return 0, nil, ErrorDataTooShort
+	if len(data) == 0 {
+		return 0, nil, ErrorNoData
 	}
 
-	if data[0] != PayloadType {
+	switch data[0] {
+	case PayloadTypeRegistered:
+		// registered for offline finding, so go ahead
+	case PayloadUnregistered:
+		return 0, nil, ErrorUnregistered
+	default:
 		return 0, nil, ErrorInvalidPayloadType
+	}
+
+	if len(data) < 27 {
+		return 0, nil, ErrorDataTooShort
 	}
 
 	if data[1] != PayloadLength {
@@ -77,7 +91,7 @@ func ParseData(mac bluetooth.MAC, data []byte) (byte, []byte, error) {
 // See https://adamcatley.com/AirTag.html#advertising-data
 func NewData(keyData []byte) bluetooth.ManufacturerDataElement {
 	data := make([]byte, 0, 27)
-	data = append(data, PayloadType, PayloadLength)
+	data = append(data, PayloadTypeRegistered, PayloadLength)
 	data = append(data, StatusBatteryFull)
 	data = append(data, keyData[6:]...)    // copy last 22 bytes of advertising key
 	data = append(data, (keyData[0] >> 6)) // first two bits of advertising key
