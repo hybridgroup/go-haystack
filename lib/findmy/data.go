@@ -41,7 +41,7 @@ var (
 
 // ParseData parses the data from a FindMy device.
 // It returns the status byte, the advertising key, and an error if any.
-func ParseData(address bluetooth.Address, data []byte) (byte, []byte, error) {
+func ParseData(mac bluetooth.MAC, data []byte) (byte, []byte, error) {
 	if len(data) < 27 {
 		return 0, nil, ErrorDataTooShort
 	}
@@ -63,12 +63,12 @@ func ParseData(address bluetooth.Address, data []byte) (byte, []byte, error) {
 	copy(key[6:], data[3:25])
 
 	// turn address into key bytes
-	key[0] = address.MAC[5]
-	key[1] = address.MAC[4]
-	key[2] = address.MAC[3]
-	key[3] = address.MAC[2]
-	key[4] = address.MAC[1]
-	key[5] = address.MAC[0]
+	key[0] = mac[5]
+	key[1] = mac[4]
+	key[2] = mac[3]
+	key[3] = mac[2]
+	key[4] = mac[1]
+	key[5] = mac[0]
 
 	return findMyStatus, key[:], nil
 }
