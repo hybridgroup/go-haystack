@@ -23,8 +23,13 @@ func scanDevices(verboseFlag *bool) error {
 
 		if device.ManufacturerData() != nil && device.ManufacturerData()[0].CompanyID == findmy.AppleCompanyID {
 			status, key, err := findmy.ParseData(unknownMAC, device.ManufacturerData()[0].Data)
-			if err != nil {
-				println("failed to parse data:", err)
+			switch {
+			case err != nil && err == findmy.ErrorUnregistered:
+				println(device.Address.String(), device.RSSI, "(unregistered)")
+			case err != nil:
+				if *verboseFlag {
+					println(device.Address.String(), " - failed to parse data:", err.Error(), hex.EncodeToString(device.ManufacturerData()[0].Data))
+				}
 				return
 			}
 			println(device.Address.String(), device.RSSI, hex.EncodeToString(key), "- battery", findmy.BatteryStatus(status))
