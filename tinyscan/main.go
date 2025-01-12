@@ -39,14 +39,18 @@ func main() {
 func scanHandler(adapter *bluetooth.Adapter, device bluetooth.ScanResult) {
 	if device.ManufacturerData() != nil && device.ManufacturerData()[0].CompanyID == findmy.AppleCompanyID {
 		status, key, err := findmy.ParseData(device.Address.MAC, device.ManufacturerData()[0].Data)
+		terminalOutput("--------------------------------")
 		switch {
+		case err != nil && err == findmy.ErrorUnregistered:
+			terminalOutput(fmt.Sprintf("%s %d (unregistered)", device.Address.String(), device.RSSI))
+			return
 		case err != nil:
 			terminalOutput("ERROR: failed to parse data:" + err.Error())
-		default:
-			terminalOutput("--------------------------------")
-			terminalOutput(fmt.Sprintf("%s %d (battery %s)", device.Address.String(), device.RSSI, findmy.BatteryStatus(status)))
-			terminalOutput(hex.EncodeToString(key))
+			return
 		}
+
+		terminalOutput(fmt.Sprintf("%s %d (battery %s)", device.Address.String(), device.RSSI, findmy.BatteryStatus(status)))
+		terminalOutput(hex.EncodeToString(key))
 	}
 }
 
