@@ -38,7 +38,7 @@ func main() {
 
 func scanHandler(adapter *bluetooth.Adapter, device bluetooth.ScanResult) {
 	if device.ManufacturerData() != nil && device.ManufacturerData()[0].CompanyID == findmy.AppleCompanyID {
-		status, key, err := findmy.ParseData(device.Address, device.ManufacturerData()[0].Data)
+		status, key, err := findmy.ParseData(device.Address.MAC, device.ManufacturerData()[0].Data)
 		switch {
 		case err != nil:
 			terminalOutput("ERROR: failed to parse data:" + err.Error())
