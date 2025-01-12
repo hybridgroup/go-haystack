@@ -1,3 +1,5 @@
+//go:build !darwin
+
 package main
 
 import (
@@ -16,7 +18,7 @@ func scanDevices(verboseFlag *bool) error {
 		}
 
 		if device.ManufacturerData() != nil && device.ManufacturerData()[0].CompanyID == findmy.AppleCompanyID {
-			status, key, err := findmy.ParseData(device.Address, device.ManufacturerData()[0].Data)
+			status, key, err := findmy.ParseData(device.Address.MAC, device.ManufacturerData()[0].Data)
 			if err != nil {
 				println("failed to parse data:", err)
 				return
