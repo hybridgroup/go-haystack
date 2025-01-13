@@ -16,15 +16,20 @@ This package provides firmware written using [TinyGo](https://tinygo.org/) and t
 
 As a result, any of the following hardware devices should work:
 
-- Adafruit Bluefruit boards using nRF SoftDevice - https://github.com/tinygo-org/bluetooth?tab=readme-ov-file#adafruit-bluefruit-boards
-- BBC Microbit using nRF SoftDevice - https://github.com/tinygo-org/bluetooth?tab=readme-ov-file#bbc-microbit
-- Other Nordic Semi SoftDevice boards - https://github.com/tinygo-org/bluetooth?tab=readme-ov-file#flashing-the-softdevice-on-other-boards
-- Boards using the NINA-FW with an ESP32 co-processor - https://github.com/tinygo-org/bluetooth?tab=readme-ov-file#esp32-nina
-- Boards such as the RP2040 Pico-W using the CYW43439 co-processor - https://github.com/tinygo-org/bluetooth?tab=readme-ov-file#cyw43439-rp2040-w
+- [Adafruit Bluefruit boards using nRF SoftDevice](https://github.com/tinygo-org/bluetooth?tab=readme-ov-file#adafruit-bluefruit-boards)
+- [BBC Microbit using nRF SoftDevice](https://github.com/tinygo-org/bluetooth?tab=readme-ov-file#bbc-microbit)
+- [Seeed Studio XIAO nRF52840](https://wiki.seeedstudio.com/XIAO_BLE)
+- [Other Nordic Semi SoftDevice boards](https://github.com/tinygo-org/bluetooth?tab=readme-ov-file#flashing-the-softdevice-on-other-boards)
+- [Boards using the NINA-FW with an ESP32 co-processor](https://github.com/tinygo-org/bluetooth?tab=readme-ov-file#esp32-nina)
+- [Boards such as the RP2040 Pico-W using the CYW43439 co-processor](https://github.com/tinygo-org/bluetooth?tab=readme-ov-file#cyw43439-rp2040-w)
+
+The beacon code is located in this repository in the [firmware](./firmware/) directory.
+
+## Linux Beacons
 
 You can also run the beacon code on any Linux that has Bluetooth hardware, such as a Raspberry Pi or other embedded system.
 
-The beacon code is located in the [firmware](./firmware/) directory.
+The beacon code is the same for embedded Linux as for microcontrollers, and is located in this repo in the [firmware](./firmware/) directory.
 
 ## TinyScan
 
