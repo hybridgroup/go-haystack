@@ -41,8 +41,8 @@ gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405/go.mod h1:Co6ibVJAznAaIkqp8
 gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c/go.mod h1:K4uyk7z7BCEPqu6E+C64Yfv1cQ7kz7rIZviUmN+EgEM=
 gopkg.in/yaml.v3 v3.0.1 h1:fxVm/GzAzEWqLHuvctI91KS9hhNmmWOoWu0XTYJS7CA=
 gopkg.in/yaml.v3 v3.0.1/go.mod h1:K4uyk7z7BCEPqu6E+C64Yfv1cQ7kz7rIZviUmN+EgEM=
-tinygo.org/x/bluetooth v0.10.1-0.20250110155930-faf2ed3d797d h1:vYBLOWzn/IIjua31fep+htcCYUkzyuuHWNMfvE7DURM=
-tinygo.org/x/bluetooth v0.10.1-0.20250110155930-faf2ed3d797d/go.mod h1:XLRopLvxWmIbofpZSXc7BGGCpgFOV5lrZ1i/DQN0BCw=
+tinygo.org/x/bluetooth v0.11.0 h1:32ludjNnqz6RyVRpmw2qgod7NvDePbBTWXkJm6jj4cg=
+tinygo.org/x/bluetooth v0.11.0/go.mod h1:XLRopLvxWmIbofpZSXc7BGGCpgFOV5lrZ1i/DQN0BCw=
 tinygo.org/x/drivers v0.29.0 h1:xHuq8Fr1D/D2+1V/3d+aXufqP81/CLi1itdVbrYgrE0=
 tinygo.org/x/drivers v0.29.0/go.mod h1:q/mU8G/wz821p8xXqbkBACOlmZFDHXd//DnYnCW+dDQ=
 tinygo.org/x/tinyfont v0.5.0 h1:+ApIQzuUuibx/LACLnGY5MWZ/zFwed0RJAnCJCRi2bk=

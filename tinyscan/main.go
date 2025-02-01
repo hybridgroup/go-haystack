@@ -16,6 +16,8 @@ var (
 
 	black   = color.RGBA{0, 0, 0, 255}
 	adapter = bluetooth.DefaultAdapter
+
+	showErrors string
 )
 
 func main() {
@@ -45,7 +47,9 @@ func scanHandler(adapter *bluetooth.Adapter, device bluetooth.ScanResult) {
 			terminalOutput(fmt.Sprintf("%s %d (unregistered)", device.Address.String(), device.RSSI))
 			return
 		case err != nil:
-			terminalOutput("ERROR: failed to parse data:" + err.Error())
+			if showErrors != "" {
+				terminalOutput("ERROR: failed to parse data:" + err.Error())
+			}
 			return
 		}
 

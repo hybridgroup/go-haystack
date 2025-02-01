@@ -51,3 +51,11 @@ https://www.adafruit.com/product/4116
 ```shell
 tinygo flash -target pyportal -stack-size 8kb .
 ```
+
+## Debugging
+
+To show scanning errors on the TinyScan display, use the `ldflags` flag in your flash command like this:
+
+```
+tinygo flash -target badger2040-w -stack-size 8kb -ldflags="-X main.showErrors=true" .
+```
