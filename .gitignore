@@ -1,2 +1,6 @@
 *.keys
 *.json
+
+# Go build outputs, named after their directory
+/cmd/haystack/haystack
+/firmware/firmware
