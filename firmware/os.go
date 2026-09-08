@@ -4,8 +4,23 @@ package main
 
 import "os"
 
-// AdvertisingKey is the public key of the device. Must be base64 encoded.
+// AdvertisingKey holds the public keys of the device, separated by commas.
+// Must be base64 encoded.
 var AdvertisingKey = os.Args[1]
+
+// KeyRotation is how long the beacon uses each key, such as "5m". It comes from
+// the second argument, and an empty value keeps the first key for ever.
+var KeyRotation = argument(2)
+
+// argument returns the argument at the index, or an empty string if the command
+// line does not have it.
+func argument(index int) string {
+	if len(os.Args) <= index {
+		return ""
+	}
+
+	return os.Args[index]
+}
 
 // TxPower is the radio transmit power in dBm. An operating system does not give
 // this control, so it stays empty here.

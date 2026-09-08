@@ -18,6 +18,8 @@ func main() {
 	dcdc0Flag := flag.Bool("dcdc0", false, "turn the DC/DC converter of the VDDH stage on. Needs a board powered through VDDH, and often gains nothing from a battery")
 	batteryPinFlag := flag.String("batterypin", "", "GPIO number that reads a battery divider, for example 2. Only an ESP32-C3 or ESP32-S3 board needs it")
 	batteryDividerFlag := flag.String("batterydivider", "", "ratio of the battery divider, for example 2/1. A single number is a ratio to 1")
+	keysFlag := flag.Int("keys", defaultKeyCount, "how many keys to generate for a device, which the beacon then uses in turn")
+	rotateFlag := flag.String("rotate", defaultKeyRotation, "how long the beacon uses each key, for example 5m. An empty value stops the rotation")
 	flag.Parse()
 
 	args := flag.Args()
@@ -32,7 +34,7 @@ func main() {
 			fmt.Println("Please provide a device name")
 			return
 		}
-		if err := generateKeys(args[1], verboseFlag); err != nil {
+		if err := generateKeys(args[1], *keysFlag, *verboseFlag); err != nil {
 			fmt.Println("failed to generate keys:", err)
 		}
 	case "flash":
@@ -47,6 +49,7 @@ func main() {
 			txPower:        *txPowerFlag,
 			batteryPin:     *batteryPinFlag,
 			batteryDivider: *batteryDividerFlag,
+			rotate:         *rotateFlag,
 		}
 		if err := flashDevice(args[1], args[2], opts); err != nil {
 			fmt.Println("failed to flash device:", err)
@@ -61,29 +64,38 @@ func main() {
 	}
 }
 
-func generateKeys(name string, verboseFlag *bool) error {
+func generateKeys(name string, count int, verbose bool) error {
 	// TODO: check if overwriting keys
 
-	priv, pub, hash, err := generateKey()
+	privs, pubs, hashes, err := generateKeySet(count)
 	if err != nil {
 		return err
 	}
 
-	// Print the keys and hash
-	if *verboseFlag {
-		fmt.Printf("Private key: %s\n", priv)
-		fmt.Printf("Advertisement key: %s\n", pub)
-		fmt.Printf("Hashed adv key: %s\n", hash)
+	// Print the keys and hashes
+	if verbose {
+		for i := range privs {
+			fmt.Printf("Private key: %s\n", privs[i])
+			fmt.Printf("Advertisement key: %s\n", pubs[i])
+			fmt.Printf("Hashed adv key: %s\n", hashes[i])
+		}
 	}
 
 	// save keys file
-	if err := saveKeys(name, priv, pub, hash); err != nil {
+	if err := saveKeys(name, privs, pubs, hashes); err != nil {
 		return err
 	}
 
 	// save device file
-	return saveDevice(name, priv)
+	return saveDevice(name, privs)
 }
+
+// defaultKeyCount is how many keys a device gets. With defaultKeyRotation the
+// beacon uses the whole set in one hour and then starts again.
+const defaultKeyCount = 12
+
+// defaultKeyRotation is how long the beacon uses each key.
+const defaultKeyRotation = "5m"
 
 // flashOptions holds the build settings that the flags give.
 type flashOptions struct {
@@ -93,6 +105,7 @@ type flashOptions struct {
 	txPower        string
 	batteryPin     string
 	batteryDivider string
+	rotate         string
 }
 
 // espTargets are the TinyGo targets that use the radio in an ESP32-C3 or
@@ -114,7 +127,7 @@ func isESPTarget(target string) bool {
 }
 
 func flashDevice(name string, target string, opts flashOptions) error {
-	key, err := readKey(name)
+	keys, err := readKeys(name)
 	if err != nil {
 		return err
 	}
@@ -128,7 +141,10 @@ func flashDevice(name string, target string, opts flashOptions) error {
 
 	esp := isESPTarget(target)
 
-	keyVal := fmt.Sprintf("-X main.AdvertisingKey='%s'", key)
+	keyVal := fmt.Sprintf("-X main.AdvertisingKey='%s'", strings.Join(keys, ","))
+	if len(keys) > 1 && opts.rotate != "" {
+		keyVal += fmt.Sprintf(" -X main.KeyRotation=%s", opts.rotate)
+	}
 	if opts.txPower != "" {
 		keyVal += fmt.Sprintf(" -X main.TxPower=%s", opts.txPower)
 		if esp {
@@ -168,26 +184,26 @@ func flashDevice(name string, target string, opts flashOptions) error {
 	return cmd.Run()
 }
 
-func readKey(name string) (string, error) {
-	f, err := os.Open(name + ".keys")
+// readKeys returns every advertisement key in the file of a device, in the
+// order that the beacon uses them.
+func readKeys(name string) ([]string, error) {
+	b, err := os.ReadFile(name + ".keys")
 	if err != nil {
-		return "", err
-	}
-	defer f.Close()
-
-	b := make([]byte, 1024)
-	n, err := f.Read(b)
-	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	lines := strings.Split(string(b[:n]), "\n")
-	for _, line := range lines {
-		if strings.Contains(line, "Advertisement key") {
-			s := strings.Split(line, ":")
-			return strings.TrimLeft(s[1], " "), nil
+	var keys []string
+	for _, line := range strings.Split(string(b), "\n") {
+		if !strings.Contains(line, "Advertisement key") {
+			continue
 		}
+		s := strings.SplitN(line, ":", 2)
+		keys = append(keys, strings.TrimSpace(s[1]))
 	}
 
-	return "", errors.New("key not found")
+	if len(keys) == 0 {
+		return nil, errors.New("key not found")
+	}
+
+	return keys, nil
 }

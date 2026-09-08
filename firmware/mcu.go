@@ -2,7 +2,8 @@
 
 package main
 
-// AdvertisingKey is the public key of the device. Must be base64 encoded.
+// AdvertisingKey holds the public keys of the device, separated by commas.
+// Must be base64 encoded.
 var AdvertisingKey string
 
 // TxPower is the radio transmit power in dBm. An empty value keeps the default
@@ -25,3 +26,8 @@ var BatteryPin string
 // BatteryDivider is the ratio of the battery divider, such as "1510/510". A
 // single number is a ratio to 1. An empty value stops the reading.
 var BatteryDivider string
+
+// KeyRotation is how long the beacon uses each key, such as "5m". An empty
+// value keeps the first key for ever. Set it with
+// -ldflags "-X main.KeyRotation=5m".
+var KeyRotation string

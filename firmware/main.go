@@ -5,15 +5,18 @@
 // tinygo flash -target nano-rp2040 -ldflags="-X main.AdvertisingKey='SGVsbG8sIFdvcmxkIQ=='" .
 // tinygo flash -target xiao-esp32c3 -ldflags="-X main.AdvertisingKey='SGVsbG8sIFdvcmxkIQ=='" .
 //
+// For a beacon that changes its key, give more keys, separated by commas, and the
+// time on each key:
+// -ldflags="-X main.AdvertisingKey='KEY1,KEY2' -X main.KeyRotation=5m"
+//
 // For a device on a battery, see the power settings in README.md.
 //
 // For Linux:
 // go run . SGVsbG8sIFdvcmxkIQ==
+// go run . KEY1,KEY2 5m
 package main
 
 import (
-	"encoding/base64"
-	"errors"
 	"strconv"
 	"strings"
 	"time"
@@ -37,11 +40,22 @@ func main() {
 	// wait for USB serial to be available
 	time.Sleep(2 * time.Second)
 
-	key, err := getKeyData()
+	keys := advertisingKeys()
+	if len(keys) == 0 {
+		fail("no advertising key")
+	}
+	key, err := keyData(keys[0])
 	if err != nil {
 		fail("failed to get key data: " + err.Error())
 	}
-	println("key is", AdvertisingKey, "(", len(key), "bytes)")
+
+	// A beacon with one key keeps it for ever, so the interval has no use.
+	rotation, rotating := rotationInterval()
+	if len(keys) == 1 {
+		rotating = false
+	}
+	println("keys are", strconv.Itoa(len(keys)), "and rotation is", rotationText(rotating))
+	println("key 0 is", keys[0], "(", len(key), "bytes)")
 
 	// This first reading must stay before adapter.Enable below. On an ESP32 it
 	// starts the ADC, which must not happen while the radio runs.
@@ -80,7 +94,7 @@ func main() {
 
 	// Set the address to the first 6 bytes of the public key. This call must
 	// stay between Enable and Start, because each one needs it.
-	adapter.SetRandomAddress(bluetooth.MAC{key[5], key[4], key[3], key[2], key[1], key[0] | 0xC0})
+	setAddress(key)
 
 	println("configure advertising...")
 	adv := adapter.DefaultAdvertisement()
@@ -102,51 +116,101 @@ func main() {
 	println("FindMy device using", address.MAC.String())
 
 	// A Nordic radio advertises on its own from here, so the CPU only wakes to
-	// read the battery. A radio on the HCI path keeps a poll loop running.
+	// change the key or to read the battery. A radio on the HCI path keeps a
+	// poll loop running.
+	var nextBattery, nextRotation time.Time
+	if hasBattery {
+		nextBattery = time.Now().Add(batteryCheckInterval)
+	}
+	if rotating {
+		nextRotation = time.Now().Add(rotation)
+	}
+
+	index := 0
 	for {
-		if !hasBattery {
-			time.Sleep(time.Hour)
-			continue
+		time.Sleep(sleepTime(time.Now(), nextBattery, nextRotation))
+		now := time.Now()
+
+		if !nextRotation.IsZero() && !now.Before(nextRotation) {
+			nextRotation = now.Add(rotation)
+			index = (index + 1) % len(keys)
+
+			// A bad key must not stop the beacon, so it keeps the key it has
+			// and tries the next one later.
+			next, err := keyData(keys[index])
+			if err != nil {
+				println("bad key", strconv.Itoa(index), err.Error())
+			} else {
+				key = next
+				println("key", strconv.Itoa(index), "is", keys[index])
+				advertising = restartAdvertising(adv, &opts, key, status, advertising)
+			}
 		}
 
-		time.Sleep(batteryCheckInterval)
+		if !nextBattery.IsZero() && !now.Before(nextBattery) {
+			nextBattery = now.Add(batteryCheckInterval)
 
-		millivolts, ok := readBatteryMillivolts()
-		if !ok {
-			continue
-		}
-		newStatus := batteryStatus(millivolts)
-		if newStatus == status {
-			continue
-		}
-		status = newStatus
-		println("battery is", strconv.Itoa(int(millivolts)), "mV,", findmy.BatteryStatus(status))
-
-		// The BLE stack refuses a new set of parameters while it advertises, so
-		// stop before the payload changes.
-		//
-		// Stop must never run if Start failed. On the HCI path Stop waits for
-		// the poll loop that Start makes, and it waits for ever if none runs.
-		if advertising {
-			if err := adv.Stop(); err != nil {
-				println("cannot stop adv:", err.Error())
+			millivolts, ok := readBatteryMillivolts()
+			if !ok {
 				continue
 			}
-			advertising = false
-		}
+			newStatus := batteryStatus(millivolts)
+			if newStatus == status {
+				continue
+			}
+			status = newStatus
+			println("battery is", strconv.Itoa(int(millivolts)), "mV,", findmy.BatteryStatus(status))
 
-		// A failure here must not stop the device being found, so it goes on
-		// and always tries to advertise again.
-		opts.ManufacturerData = []bluetooth.ManufacturerDataElement{findmy.NewDataWithStatus(key, status)}
-		if err := adv.Configure(opts); err != nil {
-			println("cannot config adv:", err.Error())
+			advertising = restartAdvertising(adv, &opts, key, status, advertising)
 		}
-		if err := adv.Start(); err != nil {
-			println("cannot start adv:", err.Error())
-			continue
-		}
-		advertising = true
 	}
+}
+
+// setAddress uses the first 6 bytes of the key as the BLE address, so the
+// address changes with the key.
+func setAddress(key []byte) {
+	adapter.SetRandomAddress(bluetooth.MAC{key[5], key[4], key[3], key[2], key[1], key[0] | 0xC0})
+}
+
+// restartAdvertising puts the key and the status in the advertisement, then
+// starts it again. It returns the new state of the advertisement.
+//
+// A failure here must not stop the device being found, so it goes on and always
+// tries to advertise again.
+func restartAdvertising(adv *bluetooth.Advertisement, opts *bluetooth.AdvertisementOptions, key []byte, status byte, advertising bool) bool {
+	// The BLE stack refuses a new set of parameters while it advertises, so
+	// stop before the payload changes.
+	//
+	// Stop must never run if Start failed. On the HCI path Stop waits for the
+	// poll loop that Start makes, and it waits for ever if none runs.
+	if advertising {
+		if err := adv.Stop(); err != nil {
+			println("cannot stop adv:", err.Error())
+			return true
+		}
+	}
+
+	setAddress(key)
+
+	opts.ManufacturerData = []bluetooth.ManufacturerDataElement{findmy.NewDataWithStatus(key, status)}
+	if err := adv.Configure(*opts); err != nil {
+		println("cannot config adv:", err.Error())
+	}
+	if err := adv.Start(); err != nil {
+		println("cannot start adv:", err.Error())
+		return false
+	}
+
+	return true
+}
+
+// rotationText tells if the beacon rotates its keys.
+func rotationText(rotating bool) string {
+	if !rotating {
+		return "off"
+	}
+
+	return KeyRotation
 }
 
 // dcdcEnabled reports if the DC/DC regulator must be turned on. The regulator
@@ -183,19 +247,6 @@ func txPower() (int8, bool) {
 		return 0, false
 	}
 	return int8(dbm), true
-}
-
-// getKeyData returns the public key data from the base64 encoded string.
-func getKeyData() ([]byte, error) {
-	val, err := base64.StdEncoding.DecodeString(AdvertisingKey)
-	if err != nil {
-		return nil, err
-	}
-	if len(val) != 28 {
-		return nil, errors.New("public key must be 28 bytes long")
-	}
-
-	return val, nil
 }
 
 // must calls a function and fails if an error occurs.
