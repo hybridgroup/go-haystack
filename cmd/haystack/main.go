@@ -12,6 +12,9 @@ import (
 
 func main() {
 	verboseFlag := flag.Bool("v", false, "enable verbose mode")
+	batteryFlag := flag.Bool("battery", false, "build for a device on a battery, which uses as little current as possible")
+	txPowerFlag := flag.String("txpower", "", "radio transmit power in dBm, for example -8. Empty keeps the default power")
+	dcdc0Flag := flag.Bool("dcdc0", false, "turn the DC/DC converter of the VDDH stage on. Needs a board powered through VDDH, and often gains nothing from a battery")
 	flag.Parse()
 
 	args := flag.Args()
@@ -34,7 +37,7 @@ func main() {
 			fmt.Println("Please provide a device name and target")
 			return
 		}
-		if err := flashDevice(args[1], args[2], verboseFlag); err != nil {
+		if err := flashDevice(args[1], args[2], verboseFlag, batteryFlag, dcdc0Flag, txPowerFlag); err != nil {
 			fmt.Println("failed to flash device:", err)
 		}
 	case "scan":
@@ -71,7 +74,7 @@ func generateKeys(name string, verboseFlag *bool) error {
 	return saveDevice(name, priv)
 }
 
-func flashDevice(name string, target string, verboseFlag *bool) error {
+func flashDevice(name string, target string, verboseFlag, batteryFlag, dcdc0Flag *bool, txPowerFlag *string) error {
 	key, err := readKey(name)
 	if err != nil {
 		return err
@@ -85,11 +88,25 @@ func flashDevice(name string, target string, verboseFlag *bool) error {
 	defer os.Chdir(pwd)
 
 	keyVal := fmt.Sprintf("-X main.AdvertisingKey='%s'", key)
-	if *verboseFlag {
-		fmt.Println("tinygo", "flash", "-target", target, "-ldflags", keyVal, ".")
+	if *txPowerFlag != "" {
+		keyVal += fmt.Sprintf(" -X main.TxPower=%s", *txPowerFlag)
+	}
+	if *dcdc0Flag {
+		keyVal += " -X main.DCDC0=on"
 	}
 
-	cmd := exec.Command("tinygo", "flash", "-target", target, "-ldflags", keyVal, ".")
+	args := []string{"flash", "-target", target}
+	if *batteryFlag {
+		// The USB peripheral uses current for no purpose on a battery.
+		args = append(args, "-serial=none")
+	}
+	args = append(args, "-ldflags", keyVal, ".")
+
+	if *verboseFlag {
+		fmt.Println("tinygo", strings.Join(args, " "))
+	}
+
+	cmd := exec.Command("tinygo", args...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	return cmd.Run()
