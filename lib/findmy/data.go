@@ -88,11 +88,19 @@ func ParseData(mac bluetooth.MAC, data []byte) (byte, []byte, error) {
 }
 
 // NewData creates the ManufacturerDataElement for the advertising data used by FindMy devices.
+// It reports the battery as full. Use NewDataWithStatus to report the real value.
 // See https://adamcatley.com/AirTag.html#advertising-data
 func NewData(keyData []byte) bluetooth.ManufacturerDataElement {
+	return NewDataWithStatus(keyData, StatusBatteryFull)
+}
+
+// NewDataWithStatus creates the ManufacturerDataElement for the advertising data
+// used by FindMy devices, with the given status byte.
+// See https://adamcatley.com/AirTag.html#advertising-data
+func NewDataWithStatus(keyData []byte, status byte) bluetooth.ManufacturerDataElement {
 	data := make([]byte, 0, 27)
 	data = append(data, PayloadTypeRegistered, PayloadLength)
-	data = append(data, StatusBatteryFull)
+	data = append(data, status)
 	data = append(data, keyData[6:]...)    // copy last 22 bytes of advertising key
 	data = append(data, (keyData[0] >> 6)) // first two bits of advertising key
 	data = append(data, Hint)
