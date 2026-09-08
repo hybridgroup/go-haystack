@@ -18,3 +18,11 @@ var DCDC = "off"
 // DCDC0 turns the high voltage DC/DC regulator on. An operating system does not
 // give this control, so it stays empty here.
 var DCDC0 string
+
+// BatteryPin is the GPIO number that reads a battery divider. An operating
+// system does not give this control, so it stays empty here.
+var BatteryPin string
+
+// BatteryDivider is the ratio of the battery divider. An operating system does
+// not give this control, so it stays empty here.
+var BatteryDivider string

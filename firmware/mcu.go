@@ -17,3 +17,11 @@ var DCDC string
 // is powered through VDDH, and it often gains nothing from a battery. Only set
 // it to "on" if a measurement shows it helps.
 var DCDC0 string
+
+// BatteryPin is the GPIO number that reads a battery divider. An empty value
+// stops the reading. Set it with -ldflags "-X main.BatteryPin=2".
+var BatteryPin string
+
+// BatteryDivider is the ratio of the battery divider, such as "1510/510". A
+// single number is a ratio to 1. An empty value stops the reading.
+var BatteryDivider string
