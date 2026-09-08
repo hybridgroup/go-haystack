@@ -26,6 +26,10 @@ import (
 // finds the device less often.
 const advertisingInterval = 1285 * time.Millisecond
 
+// How often the firmware reads the battery voltage. A battery changes slowly,
+// so a long interval keeps the CPU asleep.
+const batteryCheckInterval = 15 * time.Minute
+
 var adapter = bluetooth.DefaultAdapter
 
 func main() {
@@ -38,10 +42,17 @@ func main() {
 	}
 	println("key is", AdvertisingKey, "(", len(key), "bytes)")
 
+	millivolts, hasBattery := readBatteryMillivolts()
+	status := byte(findmy.StatusBatteryFull)
+	if hasBattery {
+		status = batteryStatus(millivolts)
+		println("battery is", strconv.Itoa(int(millivolts)), "mV,", findmy.BatteryStatus(status))
+	}
+
 	opts := bluetooth.AdvertisementOptions{
 		AdvertisementType: bluetooth.AdvertisingTypeNonConnInd,
 		Interval:          bluetooth.NewDuration(advertisingInterval),
-		ManufacturerData:  []bluetooth.ManufacturerDataElement{findmy.NewData(key)},
+		ManufacturerData:  []bluetooth.ManufacturerDataElement{findmy.NewDataWithStatus(key, status)},
 	}
 
 	must("enable BLE stack", adapter.Enable())
@@ -83,10 +94,42 @@ func main() {
 	address, _ := adapter.Address()
 	println("FindMy device using", address.MAC.String())
 
-	// The BLE stack advertises on its own from here. Park the CPU, because each
-	// wake up uses current and does no useful work.
+	// The BLE stack advertises on its own from here, so the CPU only wakes to
+	// read the battery. A board that cannot read it parks for good.
 	for {
-		time.Sleep(time.Hour)
+		if !hasBattery {
+			time.Sleep(time.Hour)
+			continue
+		}
+
+		time.Sleep(batteryCheckInterval)
+
+		millivolts, ok := readBatteryMillivolts()
+		if !ok {
+			continue
+		}
+		newStatus := batteryStatus(millivolts)
+		if newStatus == status {
+			continue
+		}
+		status = newStatus
+		println("battery is", strconv.Itoa(int(millivolts)), "mV,", findmy.BatteryStatus(status))
+
+		// The BLE stack refuses a new set of parameters while it advertises, so
+		// stop before the payload changes.
+		if err := adv.Stop(); err != nil {
+			println("cannot stop adv:", err.Error())
+			continue
+		}
+		// A failure here must not stop the device being found, so it goes on
+		// and always tries to advertise again.
+		opts.ManufacturerData = []bluetooth.ManufacturerDataElement{findmy.NewDataWithStatus(key, status)}
+		if err := adv.Configure(opts); err != nil {
+			println("cannot config adv:", err.Error())
+		}
+		if err := adv.Start(); err != nil {
+			println("cannot start adv:", err.Error())
+		}
 	}
 }
 
