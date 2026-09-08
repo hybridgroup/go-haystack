@@ -21,6 +21,7 @@ As a result, any of the following hardware devices should work:
 - [Seeed Studio XIAO nRF52840](https://wiki.seeedstudio.com/XIAO_BLE)
 - [Other Nordic Semi SoftDevice boards](https://github.com/tinygo-org/bluetooth?tab=readme-ov-file#flashing-the-softdevice-on-other-boards)
 - [Boards using the NINA-FW with an ESP32 co-processor](https://github.com/tinygo-org/bluetooth?tab=readme-ov-file#esp32-nina)
+- [Espressif ESP32-C3 and ESP32-S3 boards that use the radio in the chip](https://github.com/tinygo-org/bluetooth?tab=readme-ov-file#esp32), such as the Seeed XIAO ESP32C3 and the XIAO ESP32S3. The targets are `xiao-esp32c3`, `xiao-esp32s3`, `esp32c3-supermini`, `esp32s3-supermini`, `esp32c3-generic`, `esp32s3-generic`, `qtpy-esp32c3` and `m5stamp-c3`. These boards need TinyGo 0.42 or later.
 - [Boards such as the RP2040 Pico-W using the CYW43439 co-processor](https://github.com/tinygo-org/bluetooth?tab=readme-ov-file#cyw43439-rp2040-w)
 
 The beacon code is located in this repository in the [firmware](./firmware/) directory.
@@ -67,8 +68,16 @@ Only turn it on if you can measure that it helps:
 -ldflags="-X main.AdvertisingKey='$ADVKEY' -X main.DCDC0=on"
 ```
 
-These settings need a Nordic SoftDevice board. On any other board the firmware prints
-a message and goes on with the default behaviour.
+`DCDC`, `DCDC0` and `TxPower` all need a Nordic board that is built with a SoftDevice.
+The firmware ignores `DCDC` and `DCDC0` on every other board. `TxPower` prints a message
+there, and the radio keeps its default power.
+
+An ESP32-C3 or ESP32-S3 beacon uses much more current than a Nordic beacon. The firmware
+does not sleep on these boards, and the Bluetooth package keeps a loop that reads the
+radio every 5 milliseconds. Use a larger battery, or use a Nordic board if the device must
+run for a long time. The `-serial=none` flag gains almost nothing on these boards, because
+the console is part of the USB block that stays on, so `haystack flash -battery` does not
+use it there.
 
 ### Battery status
 
@@ -81,8 +90,51 @@ minutes, and it only restarts the advertisement when the status changes.
 | Seeed XIAO nRF52840 | 1M and 510k divider on P0.31, connected by P0.14 |
 | nice!nano v2 | VDDH/5 on an internal channel, no divider |
 | Adafruit Feather nRF52840 | Two 150k resistors on P0.29, which the board calls A6 |
+| Seeed XIAO ESP32C3 | A divider that you add, on an ADC1 pin. See below |
+| Seeed XIAO ESP32S3 | A divider that you add, on an ADC1 pin. See below |
 
 Any other board reports a full battery, as before.
+
+#### A battery divider on an ESP32-C3 or ESP32-S3
+
+No XIAO ESP32 board connects the battery to an ADC pin, so you must add a divider of two
+resistors from the battery to a pin. Then give the firmware the pin and the ratio, and it
+reads the battery in the same way as a Nordic board:
+
+```shell
+haystack -batterypin=2 -batterydivider=2/1 flash DEVICENAME xiao-esp32c3
+```
+
+The same values with `tinygo` alone:
+
+```
+-ldflags="-X main.AdvertisingKey='$ADVKEY' -X main.BatteryPin=2 -X main.BatteryDivider=2/1"
+```
+
+`BatteryPin` is the GPIO number and not the name of the pin. On the XIAO ESP32C3, A0 is
+GPIO2. On the XIAO ESP32S3, A0 is GPIO1.
+
+`BatteryDivider` is the full resistance divided by the resistance across the pin. Two
+resistors of the same value give `2/1`, which you can also write as `2`. A 1M and a 510k
+resistor give `1510/510`.
+
+Some rules for the divider:
+
+- The pin must be an ADC1 pin, which is GPIO0 to GPIO4 on the ESP32-C3 and GPIO1 to GPIO10
+  on the ESP32-S3. The other pins are ADC2, which shares its hardware with the radio and
+  gives noisy values.
+- Choose the resistors so that a full 4200 mV battery gives less than about 2500 mV at the
+  pin. This needs a ratio of 2 or more, and it keeps the reading in the range where the
+  ADC is linear.
+- Use large resistors, such as 1M and 1M, because the divider takes current from the
+  battery all the time.
+
+The firmware prints a message and reports a full battery if the values are not usable, so
+a wrong value cannot stop the beacon.
+
+The ADC on these chips has no calibration, so the voltage can be several percent wrong,
+and the thresholds are only 200 mV apart. To correct this, measure the battery with a
+multimeter one time, then change `BatteryDivider` until the message agrees with the meter.
 
 The thresholds suit a single cell LiPo, which is full at 4200 mV and empty at about
 3300 mV. They are the `battery...Millivolts` constants in
@@ -193,7 +245,8 @@ This will use TinyGo to compile the firmware using your keys, and then flash it 
 
 For a device on a battery, add `-battery`, which turns the serial port off. Add
 `-txpower` to lower the radio transmit power, which saves more current but shortens
-the range. All flags go before the subcommand. See
+the range. On an ESP32-C3 or ESP32-S3 board, add `-batterypin` and `-batterydivider` to
+read the battery. All flags go before the subcommand. See
 [Battery Powered Beacons](#battery-powered-beacons).
 
 ```shell
