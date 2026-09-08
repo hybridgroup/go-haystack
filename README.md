@@ -70,6 +70,25 @@ Only turn it on if you can measure that it helps:
 These settings need a Nordic SoftDevice board. On any other board the firmware prints
 a message and goes on with the default behaviour.
 
+### Battery status
+
+The advertisement carries a battery status, which `haystack scan` and the macless-haystack
+web UI both show. The firmware reads the battery voltage at start up and then every 15
+minutes, and it only restarts the advertisement when the status changes.
+
+| Board | How it reads the battery |
+| --- | --- |
+| Seeed XIAO nRF52840 | 1M and 510k divider on P0.31, connected by P0.14 |
+| nice!nano v2 | VDDH/5 on an internal channel, no divider |
+| Adafruit Feather nRF52840 | Two 150k resistors on P0.29, which the board calls A6 |
+
+Any other board reports a full battery, as before.
+
+The thresholds suit a single cell LiPo, which is full at 4200 mV and empty at about
+3300 mV. They are the `battery...Millivolts` constants in
+[firmware/battery.go](./firmware/battery.go). A device with a different cell, such as a
+coin cell, needs different values there.
+
 ## Linux Beacons
 
 You can also run the beacon code on any Linux that has Bluetooth hardware, such as a Raspberry Pi or other embedded system.

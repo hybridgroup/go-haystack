@@ -1,6 +1,10 @@
 package main
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/hybridgroup/go-haystack/lib/findmy"
+)
 
 func TestDCDCEnabled(t *testing.T) {
 	tests := []struct {
@@ -49,6 +53,67 @@ func TestTxPower(t *testing.T) {
 		if ok != tc.wantOK || got != tc.want {
 			t.Errorf("TxPower=%q: got %v %v, want %v %v", tc.txPower, got, ok, tc.want, tc.wantOK)
 		}
+	}
+}
+
+func TestBatteryStatus(t *testing.T) {
+	tests := []struct {
+		millivolts uint16
+		want       byte
+	}{
+		{4200, findmy.StatusBatteryFull},
+		{3900, findmy.StatusBatteryFull},
+		{3899, findmy.StatusBatteryMedium},
+		{3700, findmy.StatusBatteryMedium},
+		{3699, findmy.StatusBatteryLow},
+		{3500, findmy.StatusBatteryLow},
+		{3499, findmy.StatusBatteryCritical},
+		{0, findmy.StatusBatteryCritical},
+	}
+
+	for _, tc := range tests {
+		if got := batteryStatus(tc.millivolts); got != tc.want {
+			t.Errorf("%d mV: got %#x, want %#x", tc.millivolts, got, tc.want)
+		}
+	}
+}
+
+// TestBatteryMillivolts checks the scaling for each board that can read the
+// battery. raw is what the ADC returns for a 4200 mV battery, which is a full
+// single cell LiPo.
+func TestBatteryMillivolts(t *testing.T) {
+	tests := []struct {
+		board                      string
+		raw, reference, num, denom uint32
+		want                       uint16
+	}{
+		// XIAO nRF52840: 1M and 510k divider, so the pin sees 1418 mV.
+		{"xiao_ble", 30988, 3000, 1510, 510, 4198},
+		// Feather nRF52840: two 150k resistors, so the pin sees 2100 mV.
+		{"feather_nrf52840", 45875, 3000, 2, 1, 4198},
+		// nice!nano v2: the internal channel sees VDDH/5, which is 840 mV.
+		{"nicenano", 18350, 3000, 5, 1, 4195},
+	}
+
+	for _, tc := range tests {
+		got := batteryMillivolts(tc.raw, tc.reference, tc.num, tc.denom)
+		if got != tc.want {
+			t.Errorf("%s: got %d mV, want %d mV", tc.board, got, tc.want)
+		}
+		// Every board must read a full battery as full.
+		if s := batteryStatus(got); s != findmy.StatusBatteryFull {
+			t.Errorf("%s: %d mV gives status %#x, want full", tc.board, got, s)
+		}
+	}
+
+	// A reading of zero must not report a full battery.
+	if got := batteryMillivolts(0, 3000, 1510, 510); got != 0 {
+		t.Errorf("raw 0: got %d mV, want 0", got)
+	}
+
+	// The largest reading must not overflow.
+	if got := batteryMillivolts(0xffff, 3600, 1510, 510); got == 0 {
+		t.Error("raw 0xffff overflowed to 0")
 	}
 }
 
