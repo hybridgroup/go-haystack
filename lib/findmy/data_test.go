@@ -20,6 +20,33 @@ func TestNewData(t *testing.T) {
 	}
 }
 
+func TestNewDataWithStatus(t *testing.T) {
+	key := []byte{0xce, 0x8b, 0xad, 0x5f, 0x8a, 0x02, 0x71, 0x53, 0x8f, 0xf5, 0xaf, 0xda, 0x87, 0x49, 0x8c, 0xb0, 0x67, 0xe9, 0xa0, 0x20, 0xd6, 0xe4, 0x16, 0x78, 0x01, 0xd5, 0x5d, 0x83}
+
+	for _, status := range []byte{StatusBatteryFull, StatusBatteryMedium, StatusBatteryLow, StatusBatteryCritical} {
+		data := NewDataWithStatus(key, status)
+		if data.Data[2] != status {
+			t.Errorf("status %#x: got %#x", status, data.Data[2])
+		}
+
+		// The status must not change any other byte of the payload.
+		want := NewDataWithStatus(key, StatusBatteryFull)
+		for i := range want.Data {
+			if i == 2 {
+				continue
+			}
+			if data.Data[i] != want.Data[i] {
+				t.Errorf("status %#x: byte %d is %#x, want %#x", status, i, data.Data[i], want.Data[i])
+			}
+		}
+	}
+
+	// NewData must keep reporting a full battery.
+	if got := NewData(key); got.Data[2] != StatusBatteryFull {
+		t.Errorf("NewData status is %#x, want %#x", got.Data[2], StatusBatteryFull)
+	}
+}
+
 func TestParseData(t *testing.T) {
 	address := bluetooth.MAC{0x02, 0x8a, 0x5f, 0xad, 0x8b, 0xce}
 	startingkey := []byte{0xce, 0x8b, 0xad, 0x5f, 0x8a, 0x02, 0x71, 0x53, 0x8f, 0xf5, 0xaf, 0xda, 0x87, 0x49, 0x8c, 0xb0, 0x67, 0xe9, 0xa0, 0x20, 0xd6, 0xe4, 0x16, 0x78, 0x01, 0xd5, 0x5d, 0x83}
