@@ -1,4 +1,4 @@
-//go:build !xiao_ble && !nicenano && !feather_nrf52840
+//go:build !(xiao_ble || nicenano || feather_nrf52840 || esp32s3 || (esp32c3 && !m5stamp_c3))
 
 package main
 

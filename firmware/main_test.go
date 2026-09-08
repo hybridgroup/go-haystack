@@ -93,6 +93,9 @@ func TestBatteryMillivolts(t *testing.T) {
 		{"feather_nrf52840", 45875, 3000, 2, 1, 4198},
 		// nice!nano v2: the internal channel sees VDDH/5, which is 840 mV.
 		{"nicenano", 18350, 3000, 5, 1, 4195},
+		// ESP32 with a 2 to 1 divider that the operator added, so the pin sees
+		// 2100 mV of a 3300 mV full scale.
+		{"esp32", 41705, 3300, 2, 1, 4200},
 	}
 
 	for _, tc := range tests {
@@ -137,6 +140,53 @@ func TestDCDC0Enabled(t *testing.T) {
 		DCDC0 = tc.dcdc0
 		if got := dcdc0Enabled(); got != tc.want {
 			t.Errorf("DCDC0=%q: got %v, want %v", tc.dcdc0, got, tc.want)
+		}
+	}
+}
+
+// TestBatteryConfig checks the values that BatteryPin and BatteryDivider give.
+func TestBatteryConfig(t *testing.T) {
+	// The other tests leave these values changed, so keep and put back the
+	// values that the build gave.
+	oldPin, oldDivider := BatteryPin, BatteryDivider
+	defer func() { BatteryPin, BatteryDivider = oldPin, oldDivider }()
+
+	tests := []struct {
+		pin, divider string
+		wantPin      uint8
+		wantNum      uint32
+		wantDen      uint32
+		wantOK       bool
+	}{
+		{"2", "2/1", 2, 2, 1, true},
+		{"0", "1510/510", 0, 1510, 510, true},
+		{"10", "2", 10, 2, 1, true},
+		{"1", "1/1", 1, 1, 1, true},
+		// No value stops the reading.
+		{"", "2/1", 0, 0, 0, false},
+		{"2", "", 0, 0, 0, false},
+		{"", "", 0, 0, 0, false},
+		// A denominator of zero cannot divide.
+		{"2", "2/0", 0, 0, 0, false},
+		// A divider lowers the voltage, so these two values are in the wrong
+		// order.
+		{"2", "510/1510", 0, 0, 0, false},
+		{"2", "abc", 0, 0, 0, false},
+		{"2", "/", 0, 0, 0, false},
+		{"2", "2/x", 0, 0, 0, false},
+		{"2", "-2", 0, 0, 0, false},
+		{"abc", "2/1", 0, 0, 0, false},
+		{"-1", "2/1", 0, 0, 0, false},
+		{"300", "2/1", 0, 0, 0, false},
+	}
+
+	for _, tc := range tests {
+		BatteryPin, BatteryDivider = tc.pin, tc.divider
+		pin, num, den, ok := batteryConfig()
+		if ok != tc.wantOK || pin != tc.wantPin || num != tc.wantNum || den != tc.wantDen {
+			t.Errorf("BatteryPin=%q BatteryDivider=%q: got %d %d %d %v, want %d %d %d %v",
+				tc.pin, tc.divider, pin, num, den, ok,
+				tc.wantPin, tc.wantNum, tc.wantDen, tc.wantOK)
 		}
 	}
 }

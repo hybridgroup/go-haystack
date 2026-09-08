@@ -3,6 +3,7 @@
 //
 // To build:
 // tinygo flash -target nano-rp2040 -ldflags="-X main.AdvertisingKey='SGVsbG8sIFdvcmxkIQ=='" .
+// tinygo flash -target xiao-esp32c3 -ldflags="-X main.AdvertisingKey='SGVsbG8sIFdvcmxkIQ=='" .
 //
 // For a device on a battery, see the power settings in README.md.
 //
@@ -42,6 +43,8 @@ func main() {
 	}
 	println("key is", AdvertisingKey, "(", len(key), "bytes)")
 
+	// This first reading must stay before adapter.Enable below. On an ESP32 it
+	// starts the ADC, which must not happen while the radio runs.
 	millivolts, hasBattery := readBatteryMillivolts()
 	status := byte(findmy.StatusBatteryFull)
 	if hasBattery {
@@ -49,6 +52,8 @@ func main() {
 		println("battery is", strconv.Itoa(int(millivolts)), "mV,", findmy.BatteryStatus(status))
 	}
 
+	// The payload has no space left. A non-connectable advertisement holds 31
+	// bytes, and the 2 byte company ID and the 27 byte payload fill it.
 	opts := bluetooth.AdvertisementOptions{
 		AdvertisementType: bluetooth.AdvertisingTypeNonConnInd,
 		Interval:          bluetooth.NewDuration(advertisingInterval),
@@ -59,7 +64,7 @@ func main() {
 
 	// The DC/DC converter lowers the current a lot, but the board must have the
 	// inductor. Set DCDC to "off" for a board that does not have it.
-	if dcdcEnabled() {
+	if dcdcAvailable && dcdcEnabled() {
 		if err := adapter.EnableDCSupply(bluetooth.DCSupplyMain, true); err != nil {
 			println("cannot enable DCDC:", err.Error())
 		}
@@ -67,13 +72,14 @@ func main() {
 
 	// The VDDH stage needs a board that is powered through VDDH, and it gains
 	// little unless VDDH is much higher than VDD. It is off unless asked for.
-	if dcdc0Enabled() {
+	if dcdcAvailable && dcdc0Enabled() {
 		if err := adapter.EnableDCSupply(bluetooth.DCSupplyHighVoltage, true); err != nil {
 			println("cannot enable DCDC0:", err.Error())
 		}
 	}
 
-	// Set the address to the first 6 bytes of the public key.
+	// Set the address to the first 6 bytes of the public key. This call must
+	// stay between Enable and Start, because each one needs it.
 	adapter.SetRandomAddress(bluetooth.MAC{key[5], key[4], key[3], key[2], key[1], key[0] | 0xC0})
 
 	println("configure advertising...")
@@ -90,12 +96,13 @@ func main() {
 
 	println("start advertising...")
 	must("start adv", adv.Start())
+	advertising := true
 
 	address, _ := adapter.Address()
 	println("FindMy device using", address.MAC.String())
 
-	// The BLE stack advertises on its own from here, so the CPU only wakes to
-	// read the battery. A board that cannot read it parks for good.
+	// A Nordic radio advertises on its own from here, so the CPU only wakes to
+	// read the battery. A radio on the HCI path keeps a poll loop running.
 	for {
 		if !hasBattery {
 			time.Sleep(time.Hour)
@@ -117,10 +124,17 @@ func main() {
 
 		// The BLE stack refuses a new set of parameters while it advertises, so
 		// stop before the payload changes.
-		if err := adv.Stop(); err != nil {
-			println("cannot stop adv:", err.Error())
-			continue
+		//
+		// Stop must never run if Start failed. On the HCI path Stop waits for
+		// the poll loop that Start makes, and it waits for ever if none runs.
+		if advertising {
+			if err := adv.Stop(); err != nil {
+				println("cannot stop adv:", err.Error())
+				continue
+			}
+			advertising = false
 		}
+
 		// A failure here must not stop the device being found, so it goes on
 		// and always tries to advertise again.
 		opts.ManufacturerData = []bluetooth.ManufacturerDataElement{findmy.NewDataWithStatus(key, status)}
@@ -129,7 +143,9 @@ func main() {
 		}
 		if err := adv.Start(); err != nil {
 			println("cannot start adv:", err.Error())
+			continue
 		}
+		advertising = true
 	}
 }
 
