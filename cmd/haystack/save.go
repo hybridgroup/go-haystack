@@ -8,7 +8,9 @@ import (
 	"text/template"
 )
 
-func saveKeys(name string, priv string, pub string, hash string) error {
+// saveKeys writes one block of three lines for each key, in the order that the
+// beacon uses them.
+func saveKeys(name string, privs []string, pubs []string, hashes []string) error {
 	f, err := os.Create(name + ".keys")
 	if err != nil {
 		return err
@@ -16,9 +18,18 @@ func saveKeys(name string, priv string, pub string, hash string) error {
 
 	defer f.Close()
 
-	f.Write([]byte(fmt.Sprintf("Private key: %s\n", priv)))
-	f.Write([]byte(fmt.Sprintf("Advertisement key: %s\n", pub)))
-	f.Write([]byte(fmt.Sprintf("Hashed adv key: %s\n", hash)))
+	for i := range privs {
+		if i > 0 {
+			if _, err := f.Write([]byte("\n")); err != nil {
+				return err
+			}
+		}
+		block := fmt.Sprintf("Private key: %s\nAdvertisement key: %s\nHashed adv key: %s\n",
+			privs[i], pubs[i], hashes[i])
+		if _, err := f.Write([]byte(block)); err != nil {
+			return err
+		}
+	}
 
 	return nil
 }
@@ -38,13 +49,25 @@ const deviceTemplate = `[
         "isDeployed": true,
         "colorSpaceName": "kCGColorSpaceExtendedSRGB",
         "usesDerivation": false,
-        "isActive": false,
-        "additionalKeys": []
+        "additionalKeys": [{{range $i, $k := .AdditionalKeys}}{{if $i}},{{end}}
+            "{{$k}}"{{end}}{{if .AdditionalKeys}}
+        {{end}}]
     }
 ]
 `
 
-func saveDevice(name string, priv string) error {
+// deviceData holds the values that deviceTemplate needs.
+type deviceData struct {
+	ID             string
+	Name           string
+	PrivateKey     string
+	AdditionalKeys []string
+}
+
+// saveDevice writes the JSON file for macless-haystack. The first private key
+// is the main key and the others go into additionalKeys, which macless-haystack
+// also fetches reports for.
+func saveDevice(name string, privs []string) error {
 	t, err := template.New("device").Parse(deviceTemplate)
 	if err != nil {
 		return err
@@ -57,16 +80,12 @@ func saveDevice(name string, priv string) error {
 
 	defer f.Close()
 
-	err = t.Execute(f, map[string]string{
-		"ID":         randomInt(1000, 999999),
-		"Name":       name,
-		"PrivateKey": priv,
+	return t.Execute(f, deviceData{
+		ID:             randomInt(1000, 999999),
+		Name:           name,
+		PrivateKey:     privs[0],
+		AdditionalKeys: privs[1:],
 	})
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 // Returns an int >= min, < max

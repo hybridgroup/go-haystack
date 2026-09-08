@@ -141,11 +141,48 @@ The thresholds suit a single cell LiPo, which is full at 4200 mV and empty at ab
 [firmware/battery.go](./firmware/battery.go). A device with a different cell, such as a
 coin cell, needs different values there.
 
+## Rotating Keys
+
+A beacon that always sends the same key can be followed by anybody who scans for it. To
+stop this, a device gets a set of keys, and the beacon uses them one after the other. The
+key and the Bluetooth address both change together, because the address is the first 6
+bytes of the key.
+
+`haystack keys` makes 12 keys, and the beacon uses each key for 5 minutes. The set lasts
+one hour and then starts again. The first key goes into `privateKey` in the JSON file and
+the others go into `additionalKeys`, which macless-haystack also fetches reports for, so
+the web UI shows one device with one history.
+
+Use `-keys` for the size of the set and `-rotate` for the time on each key:
+
+```shell
+haystack -keys=24 keys DEVICENAME
+haystack -rotate=15m flash DEVICENAME xiao-ble
+```
+
+More keys give a longer time before the set repeats, but macless-haystack then asks the
+endpoint for more keys at each refresh. A set of 24 keys with `-rotate=1h` covers a day.
+
+`-keys=1` gives the behavior of the older versions, which is one key for ever. An
+`-rotate` of `0s`, or an empty value, also keeps the first key for ever.
+
+The rotation needs both parts, so a device that already has a key file with one key keeps
+that one key until you make a new set. A device that gets a new set also needs its JSON
+file imported into macless-haystack again.
+
 ## Linux Beacons
 
 You can also run the beacon code on any Linux that has Bluetooth hardware, such as a Raspberry Pi or other embedded system.
 
 The beacon code is the same for embedded Linux as for microcontrollers, and is located in this repo in the [firmware](./firmware/) directory.
+
+Give it the keys as one argument, separated by commas, and the time on each key as a
+second argument:
+
+```shell
+cd firmware
+go run . KEY1,KEY2,KEY3 5m
+```
 
 ## TinyScan
 
@@ -232,6 +269,9 @@ haystack keys DEVICENAME
 
 The keys will be saved in a file named `DEVICENAME.keys` and the configuration file for Haystack will be saved in `DEVICENAME.json`. Replace "DEVICENAME" with whatever you want to name the actual device.
 
+This makes a set of 12 keys, which the beacon uses in turn. Add `-keys` for a different
+number. See [Rotating Keys](#rotating-keys).
+
 
 2. Flash the hardware with the TinyGo target and the name of your device.
 
@@ -246,8 +286,9 @@ This will use TinyGo to compile the firmware using your keys, and then flash it 
 For a device on a battery, add `-battery`, which turns the serial port off. Add
 `-txpower` to lower the radio transmit power, which saves more current but shortens
 the range. On an ESP32-C3 or ESP32-S3 board, add `-batterypin` and `-batterydivider` to
-read the battery. All flags go before the subcommand. See
-[Battery Powered Beacons](#battery-powered-beacons).
+read the battery. Add `-rotate` for a different time on each key. All flags go before the
+subcommand. See [Battery Powered Beacons](#battery-powered-beacons) and
+[Rotating Keys](#rotating-keys).
 
 ```shell
 haystack -battery -txpower=-8 flash DEVICENAME xiao-ble
