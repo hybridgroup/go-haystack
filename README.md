@@ -25,6 +25,51 @@ As a result, any of the following hardware devices should work:
 
 The beacon code is located in this repository in the [firmware](./firmware/) directory.
 
+## Battery Powered Beacons
+
+A beacon on a battery must use as little current as possible. Three settings help,
+and all of them are off by default, because each one has a condition.
+
+Turn the serial port off. The firmware then does not start the USB peripheral, which
+uses current for no purpose on a battery. Do this for every battery build:
+
+```
+tinygo flash -target xiao-ble -serial=none -ldflags="-X main.AdvertisingKey='$ADVKEY'" .
+```
+
+Turn the DC/DC regulator on. It lowers the current that the radio and the CPU use, but
+the board must have the DC/DC inductors. The Seeed XIAO nRF52840, the nice!nano v2 and
+the Adafruit Feather nRF52840 all have them. The regulator is on unless you ask for it
+to be off:
+
+```
+-ldflags="-X main.AdvertisingKey='$ADVKEY' -X main.DCDC=off"
+```
+
+Lower the transmit power. This gives the largest saving after the regulator, but the
+device is then found only when a phone is closer to it. The value is in dBm, and the
+nRF52840 accepts -40, -20, -16, -12, -8, -4, 0, 2, 3, 4, 5, 6, 7 and 8. An empty value
+keeps the default power of the radio, which is 0 dBm:
+
+```
+-ldflags="-X main.AdvertisingKey='$ADVKEY' -X main.TxPower=-8"
+```
+
+There is a second regulator stage, which the nRF52840 calls REG0. It supplies VDD from
+VDDH, so it only exists on a board that is powered through VDDH, such as a nice!nano v2.
+Its DC/DC converter is off by default, and you should probably leave it off. A battery
+gives about 3.7 V to 4.2 V, and VDD is about 3.0 V to 3.3 V, so there is little to
+convert and the converter still costs current to run. Nordic report a case where it
+[raised the current instead of lowering it](https://devzone.nordicsemi.com/f/nordic-q-a/117514/enabling-reg0-dcdc-via-reg-dcdcen0-doesn-t-reduce-current-consumption).
+Only turn it on if you can measure that it helps:
+
+```
+-ldflags="-X main.AdvertisingKey='$ADVKEY' -X main.DCDC0=on"
+```
+
+These settings need a Nordic SoftDevice board. On any other board the firmware prints
+a message and goes on with the default behaviour.
+
 ## Linux Beacons
 
 You can also run the beacon code on any Linux that has Bluetooth hardware, such as a Raspberry Pi or other embedded system.
@@ -126,6 +171,15 @@ haystack flash DEVICENAME nano-rp2040
 ```
 
 This will use TinyGo to compile the firmware using your keys, and then flash it to the device. See [https://tinygo.org/getting-started/overview/](https://tinygo.org/getting-started/overview/) for more information about TinyGo.
+
+For a device on a battery, add `-battery`, which turns the serial port off. Add
+`-txpower` to lower the radio transmit power, which saves more current but shortens
+the range. All flags go before the subcommand. See
+[Battery Powered Beacons](#battery-powered-beacons).
+
+```shell
+haystack -battery -txpower=-8 flash DEVICENAME xiao-ble
+```
 
 
 3. Upload the JSON file for that device to your running instance of `macless-haystack` using the web UI.
