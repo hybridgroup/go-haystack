@@ -9,6 +9,8 @@ github.com/hybridgroup/go-haystack v0.1.1-0.20250820102311-570b3a760002 h1:WPAly
 github.com/hybridgroup/go-haystack v0.1.1-0.20250820102311-570b3a760002/go.mod h1:szTPNk5yX2h/itElVA1WSGmsezghEaxByfciUiNm9Bo=
 github.com/hybridgroup/go-haystack v0.1.1-0.20260908104937-a1b345b4d96e h1:TLGJbUNJhamlQz77+8cC9dDhh7zMdkINTOFR6m/22Js=
 github.com/hybridgroup/go-haystack v0.1.1-0.20260908104937-a1b345b4d96e/go.mod h1:szTPNk5yX2h/itElVA1WSGmsezghEaxByfciUiNm9Bo=
+github.com/hybridgroup/go-haystack v0.1.1-0.20260908150425-1e4cb69862ad h1:UkLRlJO3TAayNu/oeyr0aomuH74EJLp2kZt+B9I1RCA=
+github.com/hybridgroup/go-haystack v0.1.1-0.20260908150425-1e4cb69862ad/go.mod h1:szTPNk5yX2h/itElVA1WSGmsezghEaxByfciUiNm9Bo=
 github.com/konsorten/go-windows-terminal-sequences v1.0.1/go.mod h1:T0+1ngSBFLxvqU3pZ+m/2kptfBszLMUkC4ZK/EgS/cQ=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
