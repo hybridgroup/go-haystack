@@ -26,150 +26,6 @@ As a result, any of the following hardware devices should work:
 
 The beacon code is located in this repository in the [firmware](./firmware/) directory.
 
-## Battery Powered Beacons
-
-A beacon on a battery must use as little current as possible. Three settings help,
-and all of them are off by default, because each one has a condition.
-
-Turn the serial port off. The firmware then does not start the USB peripheral, which
-uses current for no purpose on a battery. Do this for every battery build:
-
-```
-tinygo flash -target xiao-ble -serial=none -ldflags="-X main.AdvertisingKey='$ADVKEY'" .
-```
-
-Turn the DC/DC regulator on. It lowers the current that the radio and the CPU use, but
-the board must have the DC/DC inductors. The Seeed XIAO nRF52840, the nice!nano v2 and
-the Adafruit Feather nRF52840 all have them. The regulator is on unless you ask for it
-to be off:
-
-```
--ldflags="-X main.AdvertisingKey='$ADVKEY' -X main.DCDC=off"
-```
-
-Lower the transmit power. This gives the largest saving after the regulator, but the
-device is then found only when a phone is closer to it. The value is in dBm, and the
-nRF52840 accepts -40, -20, -16, -12, -8, -4, 0, 2, 3, 4, 5, 6, 7 and 8. An empty value
-keeps the default power of the radio, which is 0 dBm:
-
-```
--ldflags="-X main.AdvertisingKey='$ADVKEY' -X main.TxPower=-8"
-```
-
-There is a second regulator stage, which the nRF52840 calls REG0. It supplies VDD from
-VDDH, so it only exists on a board that is powered through VDDH, such as a nice!nano v2.
-Its DC/DC converter is off by default, and you should probably leave it off. A battery
-gives about 3.7 V to 4.2 V, and VDD is about 3.0 V to 3.3 V, so there is little to
-convert and the converter still costs current to run. Nordic report a case where it
-[raised the current instead of lowering it](https://devzone.nordicsemi.com/f/nordic-q-a/117514/enabling-reg0-dcdc-via-reg-dcdcen0-doesn-t-reduce-current-consumption).
-Only turn it on if you can measure that it helps:
-
-```
--ldflags="-X main.AdvertisingKey='$ADVKEY' -X main.DCDC0=on"
-```
-
-`DCDC`, `DCDC0` and `TxPower` all need a Nordic board that is built with a SoftDevice.
-The firmware ignores `DCDC` and `DCDC0` on every other board. `TxPower` prints a message
-there, and the radio keeps its default power.
-
-An ESP32-C3 or ESP32-S3 beacon uses much more current than a Nordic beacon. The firmware
-does not sleep on these boards, and the Bluetooth package keeps a loop that reads the
-radio every 5 milliseconds. Use a larger battery, or use a Nordic board if the device must
-run for a long time. The `-serial=none` flag gains almost nothing on these boards, because
-the console is part of the USB block that stays on, so `haystack flash -battery` does not
-use it there.
-
-### Battery status
-
-The advertisement carries a battery status, which `haystack scan` and the macless-haystack
-web UI both show. The firmware reads the battery voltage at start up and then every 15
-minutes, and it only restarts the advertisement when the status changes.
-
-| Board | How it reads the battery |
-| --- | --- |
-| Seeed XIAO nRF52840 | 1M and 510k divider on P0.31, connected by P0.14 |
-| nice!nano v2 | VDDH/5 on an internal channel, no divider |
-| Adafruit Feather nRF52840 | Two 150k resistors on P0.29, which the board calls A6 |
-| Seeed XIAO ESP32C3 | A divider that you add, on an ADC1 pin. See below |
-| Seeed XIAO ESP32S3 | A divider that you add, on an ADC1 pin. See below |
-
-Any other board reports a full battery, as before.
-
-#### A battery divider on an ESP32-C3 or ESP32-S3
-
-No XIAO ESP32 board connects the battery to an ADC pin, so you must add a divider of two
-resistors from the battery to a pin. Then give the firmware the pin and the ratio, and it
-reads the battery in the same way as a Nordic board:
-
-```shell
-haystack -batterypin=2 -batterydivider=2/1 flash DEVICENAME xiao-esp32c3
-```
-
-The same values with `tinygo` alone:
-
-```
--ldflags="-X main.AdvertisingKey='$ADVKEY' -X main.BatteryPin=2 -X main.BatteryDivider=2/1"
-```
-
-`BatteryPin` is the GPIO number and not the name of the pin. On the XIAO ESP32C3, A0 is
-GPIO2. On the XIAO ESP32S3, A0 is GPIO1.
-
-`BatteryDivider` is the full resistance divided by the resistance across the pin. Two
-resistors of the same value give `2/1`, which you can also write as `2`. A 1M and a 510k
-resistor give `1510/510`.
-
-Some rules for the divider:
-
-- The pin must be an ADC1 pin, which is GPIO0 to GPIO4 on the ESP32-C3 and GPIO1 to GPIO10
-  on the ESP32-S3. The other pins are ADC2, which shares its hardware with the radio and
-  gives noisy values.
-- Choose the resistors so that a full 4200 mV battery gives less than about 2500 mV at the
-  pin. This needs a ratio of 2 or more, and it keeps the reading in the range where the
-  ADC is linear.
-- Use large resistors, such as 1M and 1M, because the divider takes current from the
-  battery all the time.
-
-The firmware prints a message and reports a full battery if the values are not usable, so
-a wrong value cannot stop the beacon.
-
-The ADC on these chips has no calibration, so the voltage can be several percent wrong,
-and the thresholds are only 200 mV apart. To correct this, measure the battery with a
-multimeter one time, then change `BatteryDivider` until the message agrees with the meter.
-
-The thresholds suit a single cell LiPo, which is full at 4200 mV and empty at about
-3300 mV. They are the `battery...Millivolts` constants in
-[firmware/battery.go](./firmware/battery.go). A device with a different cell, such as a
-coin cell, needs different values there.
-
-## Rotating Keys
-
-A beacon that always sends the same key can be followed by anybody who scans for it. To
-stop this, a device gets a set of keys, and the beacon uses them one after the other. The
-key and the Bluetooth address both change together, because the address is the first 6
-bytes of the key.
-
-`haystack keys` makes 12 keys, and the beacon uses each key for 5 minutes. The set lasts
-one hour and then starts again. The first key goes into `privateKey` in the JSON file and
-the others go into `additionalKeys`, which macless-haystack also fetches reports for, so
-the web UI shows one device with one history.
-
-Use `-keys` for the size of the set and `-rotate` for the time on each key:
-
-```shell
-haystack -keys=24 keys DEVICENAME
-haystack -rotate=15m flash DEVICENAME xiao-ble
-```
-
-More keys give a longer time before the set repeats, but macless-haystack then asks the
-endpoint for more keys at each refresh. A set of 24 keys with `-rotate=1h` covers a day.
-
-`-keys=1` gives the behavior of the older versions, which is one key for ever. An
-`-rotate` of `0s`, or an empty value, also keeps the first key for ever.
-
-The rotation needs both parts, so a device that already has a key file with one key keeps
-that one key until you make a new set. A device that gets a new set also needs its JSON
-file imported into macless-haystack again.
-
 ## Linux Beacons
 
 You can also run the beacon code on any Linux that has Bluetooth hardware, such as a Raspberry Pi or other embedded system.
@@ -183,7 +39,6 @@ second argument:
 cd firmware
 go run . KEY1,KEY2,KEY3 5m
 ```
-
 ## TinyScan
 
 Go Haystack also includes TinyScan, a hardware scanner for local devices.
@@ -287,7 +142,7 @@ For a device on a battery, add `-battery`, which turns the serial port off. Add
 `-txpower` to lower the radio transmit power, which saves more current but shortens
 the range. On an ESP32-C3 or ESP32-S3 board, add `-batterypin` and `-batterydivider` to
 read the battery. Add `-rotate` for a different time on each key. All flags go before the
-subcommand. See [Battery Powered Beacons](#battery-powered-beacons) and
+subcommand. See [Battery Powered Beacons](./firmware/README.md#battery-powered-beacons) and
 [Rotating Keys](#rotating-keys).
 
 ```shell
@@ -308,3 +163,32 @@ Eventually, if your device is in range of any iPhone, they will appear in your M
 Note that it might take a while for the first data to show up.
 
 Have fun, be good!
+
+## Rotating Keys
+
+A beacon that always sends the same key can be followed by anybody who scans for it. To
+stop this, a device gets a set of keys, and the beacon uses them one after the other. The
+key and the Bluetooth address both change together, because the address is the first 6
+bytes of the key.
+
+`haystack keys` makes 12 keys, and the beacon uses each key for 5 minutes. The set lasts
+one hour and then starts again. The first key goes into `privateKey` in the JSON file and
+the others go into `additionalKeys`, which macless-haystack also fetches reports for, so
+the web UI shows one device with one history.
+
+Use `-keys` for the size of the set and `-rotate` for the time on each key:
+
+```shell
+haystack -keys=24 keys DEVICENAME
+haystack -rotate=15m flash DEVICENAME xiao-ble
+```
+
+More keys give a longer time before the set repeats, but macless-haystack then asks the
+endpoint for more keys at each refresh. A set of 24 keys with `-rotate=1h` covers a day.
+
+`-keys=1` gives the behavior of the older versions, which is one key for ever. An
+`-rotate` of `0s`, or an empty value, also keeps the first key for ever.
+
+The rotation needs both parts, so a device that already has a key file with one key keeps
+that one key until you make a new set. A device that gets a new set also needs its JSON
+file imported into macless-haystack again.
