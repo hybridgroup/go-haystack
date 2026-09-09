@@ -15,16 +15,21 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        include:
+          - {os: ubuntu-latest, packages: ./...}
+          - {os: windows-latest, packages: ./...}
+          # The firmware package advertises, which the bluetooth package does not
+          # do on CoreBluetooth, so macOS only gets the other packages.
+          - {os: macos-latest, packages: . ./cmd/... ./lib/...}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
           cache: true
-      - run: go build ./...
-      - run: go vet ./...
-      - run: go test ./...
+      - run: go build ${{ matrix.packages }}
+      - run: go vet ${{ matrix.packages }}
+      - run: go test ${{ matrix.packages }}
 
   tinygo:
     name: tinygo ${{ matrix.target }}
