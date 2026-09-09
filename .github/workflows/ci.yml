@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: test ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+      - run: go build ./...
+      - run: go vet ./...
+      - run: go test ./...
+
+  tinygo:
+    name: tinygo ${{ matrix.target }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {dir: ./firmware, target: xiao-ble}
+          - {dir: ./firmware, target: nicenano}
+          - {dir: ./firmware, target: feather-nrf52840}
+          - {dir: ./firmware, target: xiao-esp32c3}
+          - {dir: ./firmware, target: xiao-esp32s3}
+          - {dir: ./firmware, target: m5stamp-c3}
+          - {dir: ./firmware, target: pico-w}
+          - {dir: ./tinyscan, target: badger2040-w, flags: -stack-size 8kb}
+          - {dir: ./tinyscan, target: clue, flags: -stack-size 8kb}
+          - {dir: ./tinyscan, target: pybadge, flags: -stack-size 8kb}
+          - {dir: ./tinyscan, target: pyportal, flags: -stack-size 8kb}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+      - uses: acifani/setup-tinygo@v2
+        with:
+          tinygo-version: '0.42.0'
+      - run: tinygo build -o /dev/null -size short ${{ matrix.flags }} -target=${{ matrix.target }} ${{ matrix.dir }}
