@@ -9,7 +9,12 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
+
+	"github.com/hybridgroup/go-haystack"
 )
+
+// usage names the subcommands of the tool.
+const usage = "subcommand required. valid subcommands are 'keys' 'flash' 'scan' 'version'"
 
 func main() {
 	verboseFlag := flag.Bool("v", false, "enable verbose mode")
@@ -24,7 +29,7 @@ func main() {
 
 	args := flag.Args()
 	if len(args) < 1 {
-		fmt.Println("subcommand required. valid subcommands are 'keys' 'flash' 'scan'")
+		fmt.Println(usage)
 		return
 	}
 
@@ -58,8 +63,10 @@ func main() {
 		if err := scanDevices(verboseFlag); err != nil {
 			fmt.Println("failed to scan devices:", err)
 		}
+	case "version":
+		fmt.Println("haystack", haystack.VersionString())
 	default:
-		fmt.Println("subcommand required. valid subcommands are 'keys' 'flash' 'scan'")
+		fmt.Println(usage)
 		return
 	}
 }
