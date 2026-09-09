@@ -94,6 +94,18 @@ go install github.com/hybridgroup/go-haystack/cmd/haystack@latest
 
 ## How to use
 
+### Showing the version
+
+```shell
+haystack version
+```
+
+Returns the version of the tool, with the revision of the build if it has one:
+
+```
+haystack 0.2.0-dev (7180716)
+```
+
 ### Scanning for local devices
 
 ```shell
