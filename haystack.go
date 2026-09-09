@@ -3,7 +3,7 @@ package haystack
 import "runtime/debug"
 
 // Version is the release version of go-haystack.
-const Version = "0.1.0"
+const Version = "0.2.0-dev"
 
 // VersionString returns the version with the VCS revision of the build, if the
 // binary has one.

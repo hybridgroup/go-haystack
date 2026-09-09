@@ -103,7 +103,7 @@ haystack version
 Returns the version of the tool, with the revision of the build if it has one:
 
 ```
-haystack 0.1.0 (7180716)
+haystack 0.2.0-dev (7180716)
 ```
 
 ### Scanning for local devices
