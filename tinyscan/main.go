@@ -1,3 +1,5 @@
+//go:build badger2040_w || clue_alpha || pybadge || pyportal
+
 package main
 
 import (
