@@ -1,5 +1,7 @@
 # go-haystack
 
+[![CI](https://github.com/hybridgroup/go-haystack/actions/workflows/ci.yml/badge.svg)](https://github.com/hybridgroup/go-haystack/actions/workflows/ci.yml)
+
 ![Go Haystack gopher](./images/go-haystack.png)
 
 Go Haystack lets you track personal Bluetooth devices via Apple's massive ["Find My"](https://developer.apple.com/find-my/) network.
@@ -204,3 +206,19 @@ endpoint for more keys at each refresh. A set of 24 keys with `-rotate=1h` cover
 The rotation needs both parts, so a device that already has a key file with one key keeps
 that one key until you make a new set. A device that gets a new set also needs its JSON
 file imported into macless-haystack again.
+
+## How to test
+
+The unit tests run on the host, so they need no hardware:
+
+```shell
+go test ./...
+```
+
+The firmware and TinyScan code only compiles for a microcontroller. To check it, build one
+of the targets:
+
+```shell
+tinygo build -o /dev/null -target=xiao-ble ./firmware
+tinygo build -o /dev/null -stack-size 8kb -target=clue ./tinyscan
+```
