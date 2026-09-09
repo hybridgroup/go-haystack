@@ -12,6 +12,9 @@ import (
 
 var errInvalidHash = errors.New("Hash contains '/'")
 
+// keySize is the size of a P-224 key in bytes.
+const keySize = 28
+
 func generateKey() (string, string, string, error) {
 	// Generate ECDSA private key using P-224 curve
 	pk, err := ecdsa.GenerateKey(elliptic.P224(), rand.Reader)
@@ -19,19 +22,15 @@ func generateKey() (string, string, string, error) {
 		return "", "", "", err
 	}
 
-	// Extract the raw private key bytes
-	privateKeyBytes := pk.D.Bytes()
-
-	// Ensure the private key is 28 bytes long (P-224 curve)
-	if len(privateKeyBytes) != 28 {
-		return "", "", "", errors.New("Private key is not 28 bytes long")
-	}
+	// Extract the raw private key bytes. FillBytes keeps the leading zeros,
+	// which Bytes removes, so the key is always the full size of the curve.
+	privateKeyBytes := pk.D.FillBytes(make([]byte, keySize))
 
 	// Encode the raw private key to Base64
 	privateKeyBase64 := base64.StdEncoding.EncodeToString(privateKeyBytes)
 
 	// extract raw public key bytes
-	publicKeyBytes := pk.PublicKey.X.Bytes()
+	publicKeyBytes := pk.PublicKey.X.FillBytes(make([]byte, keySize))
 
 	// Encode the public key to Base64
 	publicKeyBase64 := base64.StdEncoding.EncodeToString(publicKeyBytes)

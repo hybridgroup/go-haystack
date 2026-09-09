@@ -38,6 +38,12 @@ func TestGenerateKeySet(t *testing.T) {
 			if err != nil || len(val) != 28 {
 				t.Errorf("count %d: adv key %d is %d bytes, %v", count, i, len(val), err)
 			}
+
+			// A key with a leading zero must keep the full size.
+			val, err = base64.StdEncoding.DecodeString(privs[i])
+			if err != nil || len(val) != 28 {
+				t.Errorf("count %d: private key %d is %d bytes, %v", count, i, len(val), err)
+			}
 		}
 	}
 
