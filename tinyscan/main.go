@@ -20,10 +20,29 @@ var (
 	adapter = bluetooth.DefaultAdapter
 
 	showErrors string
+
+	// MyDevices holds the devices of the owner, such as
+	// "name=KEY1,KEY2;name2=KEY3". The keys are the base64 advertisement keys.
+	// Set it with -ldflags "-X main.MyDevices=...".
+	MyDevices string
+
+	// OnlyMine hides every beacon that is not a device of the owner. Set it to
+	// "true" with -ldflags "-X main.OnlyMine=true".
+	OnlyMine string
+
+	devices []findmy.Device
 )
 
 func main() {
 	initTerminal()
+
+	// A bad list of devices must not stop the scan.
+	var err error
+	devices, err = findmy.ParseDevices(MyDevices)
+	if err != nil {
+		terminalOutput("ERROR: failed to parse devices:" + err.Error())
+	}
+	terminalOutput(fmt.Sprintf("known devices: %d", len(devices)))
 
 	terminalOutput("enable interface...")
 
@@ -43,19 +62,33 @@ func main() {
 func scanHandler(adapter *bluetooth.Adapter, device bluetooth.ScanResult) {
 	if device.ManufacturerData() != nil && device.ManufacturerData()[0].CompanyID == findmy.AppleCompanyID {
 		status, key, err := findmy.ParseData(device.Address.MAC, device.ManufacturerData()[0].Data)
-		terminalOutput("--------------------------------")
 		switch {
 		case err != nil && err == findmy.ErrorUnregistered:
+			if OnlyMine != "" {
+				return
+			}
+			terminalOutput("--------------------------------")
 			terminalOutput(fmt.Sprintf("%s %d (unregistered)", device.Address.String(), device.RSSI))
 			return
 		case err != nil:
 			if showErrors != "" {
+				terminalOutput("--------------------------------")
 				terminalOutput("ERROR: failed to parse data:" + err.Error())
 			}
 			return
 		}
 
+		name, mine := findmy.Lookup(devices, key)
+		if !mine && OnlyMine != "" {
+			return
+		}
+
+		terminalOutput("--------------------------------")
 		terminalOutput(fmt.Sprintf("%s %d (battery %s)", device.Address.String(), device.RSSI, findmy.BatteryStatus(status)))
+		if mine {
+			terminalOutput("* " + name)
+			return
+		}
 		terminalOutput(hex.EncodeToString(key))
 	}
 }
