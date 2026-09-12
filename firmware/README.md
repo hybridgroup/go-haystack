@@ -128,10 +128,51 @@ The ADC on these chips has no calibration, so the voltage can be several percent
 and the thresholds are only 200 mV apart. To correct this, measure the battery with a
 multimeter one time, then change `BatteryDivider` until the message agrees with the meter.
 
-The thresholds suit a single cell LiPo, which is full at 4200 mV and empty at about
-3300 mV. They are the `battery...Millivolts` constants in
-[firmware/battery.go](./battery.go). A device with a different cell, such as a
-coin cell, needs different values there.
+#### The cell type
+
+The default thresholds suit a single cell LiPo, which is full at 4200 mV and empty at
+about 3300 mV. A 3 V coin cell never gets above 3500 mV, so it reports a critical
+battery for its whole life with these values. Give the cell type instead:
+
+```shell
+haystack -batterytype=cr2032 flash DEVICENAME xiao-ble
+```
+
+| Type | Full | Medium | Low |
+| --- | --- | --- | --- |
+| `lipo` (the default) | 3900 mV | 3700 mV | 3500 mV |
+| `cr2032` | 2900 mV | 2750 mV | 2600 mV |
+| `cr1220` | 2950 mV | 2800 mV | 2650 mV |
+| `aa-alkaline` | 2800 mV | 2500 mV | 2200 mV |
+
+The thresholds come from the discharge curve of the cell and not from its capacity in
+mAh. A CR2032 and a CR1220 are the same lithium chemistry and have almost the same
+curve. The CR1220 has a much smaller capacity, so it is empty much sooner, but the
+voltage at which it is empty is nearly the same. Its internal resistance is higher, so
+it sags more when the radio transmits, and its thresholds are 50 mV higher for this
+reason. `aa-alkaline` is two alkaline cells in series, AA or AAA.
+
+For a cell that is not in the table, give the three voltages in millivolts. They are the
+full, medium and low values in that order, and each one must be lower than the one
+before:
+
+```shell
+haystack -batterythresholds=2900/2750/2600 flash DEVICENAME xiao-ble
+```
+
+The same values with `tinygo` alone:
+
+```
+-ldflags="-X main.AdvertisingKey='$ADVKEY' -X main.BatteryType=cr2032"
+-ldflags="-X main.AdvertisingKey='$ADVKEY' -X main.BatteryThresholds=2900/2750/2600"
+```
+
+`BatteryThresholds` wins over `BatteryType`. The firmware prints a message and uses the
+LiPo values if a value is not usable, so a wrong value cannot stop the beacon.
+
+A 3 V coin cell on an ESP32-C3 or ESP32-S3 board often needs no divider, because it is
+already below the 2500 mV that the ADC reads well. Give `-batterydivider=1/1` to read the
+pin directly.
 
 
 ## Technical details

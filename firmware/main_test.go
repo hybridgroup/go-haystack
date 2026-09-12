@@ -57,23 +57,83 @@ func TestTxPower(t *testing.T) {
 }
 
 func TestBatteryStatus(t *testing.T) {
+	lipo := batteryProfiles["lipo"]
+	coin := batteryProfiles["cr2032"]
+
 	tests := []struct {
+		limits     batteryLimits
 		millivolts uint16
 		want       byte
 	}{
-		{4200, findmy.StatusBatteryFull},
-		{3900, findmy.StatusBatteryFull},
-		{3899, findmy.StatusBatteryMedium},
-		{3700, findmy.StatusBatteryMedium},
-		{3699, findmy.StatusBatteryLow},
-		{3500, findmy.StatusBatteryLow},
-		{3499, findmy.StatusBatteryCritical},
-		{0, findmy.StatusBatteryCritical},
+		{lipo, 4200, findmy.StatusBatteryFull},
+		{lipo, 3900, findmy.StatusBatteryFull},
+		{lipo, 3899, findmy.StatusBatteryMedium},
+		{lipo, 3700, findmy.StatusBatteryMedium},
+		{lipo, 3699, findmy.StatusBatteryLow},
+		{lipo, 3500, findmy.StatusBatteryLow},
+		{lipo, 3499, findmy.StatusBatteryCritical},
+		{lipo, 0, findmy.StatusBatteryCritical},
+		// A coin cell never gets to 3500 mV, so the LiPo values give
+		// "critical" for its whole life.
+		{lipo, 2800, findmy.StatusBatteryCritical},
+		{coin, 3000, findmy.StatusBatteryFull},
+		{coin, 2900, findmy.StatusBatteryFull},
+		{coin, 2899, findmy.StatusBatteryMedium},
+		{coin, 2800, findmy.StatusBatteryMedium},
+		{coin, 2749, findmy.StatusBatteryLow},
+		{coin, 2600, findmy.StatusBatteryLow},
+		{coin, 2599, findmy.StatusBatteryCritical},
 	}
 
 	for _, tc := range tests {
-		if got := batteryStatus(tc.millivolts); got != tc.want {
-			t.Errorf("%d mV: got %#x, want %#x", tc.millivolts, got, tc.want)
+		if got := batteryStatus(tc.millivolts, tc.limits); got != tc.want {
+			t.Errorf("%d mV with %v: got %#x, want %#x", tc.millivolts, tc.limits, got, tc.want)
+		}
+	}
+}
+
+// TestBatteryThresholds checks the values that BatteryType and
+// BatteryThresholds give.
+func TestBatteryThresholds(t *testing.T) {
+	// The other tests leave these values changed, so keep and put back the
+	// values that the build gave.
+	oldType, oldThresholds := BatteryType, BatteryThresholds
+	defer func() { BatteryType, BatteryThresholds = oldType, oldThresholds }()
+
+	lipo := batteryProfiles["lipo"]
+
+	tests := []struct {
+		batteryType string
+		thresholds  string
+		want        batteryLimits
+	}{
+		// No value is a LiPo cell.
+		{"", "", lipo},
+		{"lipo", "", lipo},
+		{"cr2032", "", batteryProfiles["cr2032"]},
+		{"cr1220", "", batteryProfiles["cr1220"]},
+		{"aa-alkaline", "", batteryProfiles["aa-alkaline"]},
+		// The raw values win over the name of the cell.
+		{"", "2900/2750/2600", batteryLimits{2900, 2750, 2600}},
+		{"lipo", "2900/2750/2600", batteryLimits{2900, 2750, 2600}},
+		// A value that is not usable falls back to the LiPo cell.
+		{"nosuchcell", "", lipo},
+		{"", "2900/2750", lipo},
+		{"", "2900/2750/2600/2500", lipo},
+		{"", "2600/2750/2900", lipo},
+		{"", "2900/2900/2600", lipo},
+		{"", "2900/2750/0", lipo},
+		{"", "2900/abc/2600", lipo},
+		{"", "-2900/2750/2600", lipo},
+		{"", "70000/2750/2600", lipo},
+		{"", "//", lipo},
+	}
+
+	for _, tc := range tests {
+		BatteryType, BatteryThresholds = tc.batteryType, tc.thresholds
+		if got := batteryThresholds(); got != tc.want {
+			t.Errorf("BatteryType=%q BatteryThresholds=%q: got %v, want %v",
+				tc.batteryType, tc.thresholds, got, tc.want)
 		}
 	}
 }
@@ -104,7 +164,7 @@ func TestBatteryMillivolts(t *testing.T) {
 			t.Errorf("%s: got %d mV, want %d mV", tc.board, got, tc.want)
 		}
 		// Every board must read a full battery as full.
-		if s := batteryStatus(got); s != findmy.StatusBatteryFull {
+		if s := batteryStatus(got, batteryProfiles["lipo"]); s != findmy.StatusBatteryFull {
 			t.Errorf("%s: %d mV gives status %#x, want full", tc.board, got, s)
 		}
 	}

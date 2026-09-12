@@ -41,3 +41,11 @@ var BatteryPin string
 // BatteryDivider is the ratio of the battery divider. An operating system does
 // not give this control, so it stays empty here.
 var BatteryDivider string
+
+// BatteryType names the cell that the beacon uses. An operating system does not
+// read a battery here, so it stays empty.
+var BatteryType string
+
+// BatteryThresholds gives the battery voltage thresholds. An operating system
+// does not read a battery here, so it stays empty.
+var BatteryThresholds string

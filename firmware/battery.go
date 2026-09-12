@@ -2,14 +2,28 @@ package main
 
 import "github.com/hybridgroup/go-haystack/lib/findmy"
 
-// Thresholds in millivolts for a single cell LiPo battery, which is full at
-// 4200 mV and empty at about 3300 mV. A device that uses a different cell needs
-// different values here.
-const (
-	batteryFullMillivolts   = 3900
-	batteryMediumMillivolts = 3700
-	batteryLowMillivolts    = 3500
-)
+// batteryLimits holds the thresholds in millivolts that give the status of a
+// battery.
+type batteryLimits struct {
+	full, medium, low uint16
+}
+
+// batteryProfiles gives the thresholds for each cell type. The coin cell values
+// come from the Energizer CR2032 and CR1220 datasheets, and the alkaline values
+// are for two Energizer E91 cells in series.
+// https://data.energizer.com/pdfs/cr2032.pdf
+// https://data.energizer.com/pdfs/cr1220.pdf
+// https://data.energizer.com/pdfs/e91.pdf
+var batteryProfiles = map[string]batteryLimits{
+	"lipo":        {3900, 3700, 3500},
+	"cr2032":      {2900, 2750, 2600},
+	"cr1220":      {2950, 2800, 2650},
+	"aa-alkaline": {2800, 2500, 2200},
+}
+
+// defaultBatteryType is the cell that the firmware uses when BatteryType is
+// empty.
+const defaultBatteryType = "lipo"
 
 // batteryMillivolts converts a raw ADC reading to the battery voltage. raw is
 // the 16 bit value that the ADC returns, reference is the full scale of the ADC
@@ -21,13 +35,13 @@ func batteryMillivolts(raw, reference, numerator, denominator uint32) uint16 {
 }
 
 // batteryStatus returns the FindMy status byte for a battery voltage.
-func batteryStatus(millivolts uint16) byte {
+func batteryStatus(millivolts uint16, limits batteryLimits) byte {
 	switch {
-	case millivolts >= batteryFullMillivolts:
+	case millivolts >= limits.full:
 		return findmy.StatusBatteryFull
-	case millivolts >= batteryMediumMillivolts:
+	case millivolts >= limits.medium:
 		return findmy.StatusBatteryMedium
-	case millivolts >= batteryLowMillivolts:
+	case millivolts >= limits.low:
 		return findmy.StatusBatteryLow
 	default:
 		return findmy.StatusBatteryCritical

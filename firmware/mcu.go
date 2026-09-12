@@ -27,6 +27,15 @@ var BatteryPin string
 // single number is a ratio to 1. An empty value stops the reading.
 var BatteryDivider string
 
+// BatteryType names the cell that the beacon uses, such as "cr2032". An empty
+// value is a single cell LiPo. Set it with -ldflags "-X main.BatteryType=cr2032".
+var BatteryType string
+
+// BatteryThresholds gives the full, medium and low voltages in millivolts, such
+// as "2900/2750/2600". It wins over BatteryType. An empty value keeps the
+// values of the cell that BatteryType names.
+var BatteryThresholds string
+
 // KeyRotation is how long the beacon uses each key, such as "5m". An empty
 // value keeps the first key for ever. Set it with
 // -ldflags "-X main.KeyRotation=5m".
