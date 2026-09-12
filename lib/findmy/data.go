@@ -19,6 +19,9 @@ const (
 	// Length of the payload
 	PayloadLength = 0x19
 
+	// Length of an advertisement key
+	KeyLength = 28
+
 	// Hint byte
 	Hint = 0x00
 
@@ -73,7 +76,7 @@ func ParseData(mac bluetooth.MAC, data []byte) (byte, []byte, error) {
 	}
 
 	findMyStatus := data[2]
-	var key [28]byte
+	var key [KeyLength]byte
 	copy(key[6:], data[3:25])
 
 	// turn address into key bytes

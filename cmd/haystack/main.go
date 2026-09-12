@@ -14,7 +14,7 @@ import (
 )
 
 // usage names the subcommands of the tool.
-const usage = "subcommand required. valid subcommands are 'keys' 'flash' 'scan' 'version'"
+const usage = "subcommand required. valid subcommands are 'keys' 'flash' 'flashscan' 'scan' 'version'"
 
 func main() {
 	verboseFlag := flag.Bool("v", false, "enable verbose mode")
@@ -26,6 +26,7 @@ func main() {
 	batteryTypeFlag := flag.String("batterytype", "", "cell that the beacon uses, one of lipo, cr2032, cr1220 or aa-alkaline. Empty is lipo")
 	batteryThresholdsFlag := flag.String("batterythresholds", "", "full, medium and low battery voltages in millivolts, for example 2900/2750/2600. It wins over -batterytype")
 	keysFlag := flag.Int("keys", defaultKeyCount, "how many keys to generate for a device, which the beacon then uses in turn")
+	onlyMineFlag := flag.Bool("onlymine", false, "the scanner shows only your own devices")
 	rotateFlag := flag.String("rotate", defaultKeyRotation, "how long the beacon uses each key, for example 5m. An empty value stops the rotation")
 	flag.Parse()
 
@@ -62,6 +63,18 @@ func main() {
 		}
 		if err := flashDevice(args[1], args[2], opts); err != nil {
 			fmt.Println("failed to flash device:", err)
+		}
+	case "flashscan":
+		if len(args) < 2 {
+			fmt.Println("Please provide a target")
+			return
+		}
+		opts := scanOptions{
+			verbose:  *verboseFlag,
+			onlyMine: *onlyMineFlag,
+		}
+		if err := flashScanner(args[1], args[2:], opts); err != nil {
+			fmt.Println("failed to flash scanner:", err)
 		}
 	case "scan":
 		if err := scanDevices(verboseFlag); err != nil {

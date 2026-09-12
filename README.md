@@ -51,6 +51,17 @@ TinyScan runs on several different microcontrollers boards with Bluetooth and mi
 
 The TinyScan code is located in the [tinyscan](./tinyscan/) directory in this repository.
 
+TinyScan can also show the names of your own devices. Flash it with the same device
+names that you used with `haystack keys`, and it then shows the name of the device
+with a `*` mark instead of the key:
+
+```shell
+haystack flashscan clue blackgopher redgopher
+```
+
+Add `-onlymine` to hide every beacon that is not one of your devices. See
+[TinyScan](./tinyscan/README.md#your-own-devices) for more information.
+
 ## How to install
 
 ### Apple ID
