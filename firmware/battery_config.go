@@ -53,3 +53,60 @@ func parseDivider(s string) (uint32, uint32, bool) {
 
 	return uint32(num), uint32(den), true
 }
+
+// batteryThresholds returns the thresholds that BatteryThresholds and
+// BatteryType give. It returns the default profile unless a value is usable.
+func batteryThresholds() batteryLimits {
+	fallback := batteryProfiles[defaultBatteryType]
+
+	if BatteryThresholds != "" {
+		limits, ok := parseThresholds(BatteryThresholds)
+		if !ok {
+			println("bad BatteryThresholds value:", BatteryThresholds)
+			return fallback
+		}
+		return limits
+	}
+
+	if BatteryType == "" {
+		return fallback
+	}
+
+	limits, ok := batteryProfiles[BatteryType]
+	if !ok {
+		println("bad BatteryType value:", BatteryType)
+		return fallback
+	}
+
+	return limits
+}
+
+// parseThresholds reads three thresholds in millivolts, such as
+// "2900/2750/2600", which are the full, medium and low values in that order.
+func parseThresholds(s string) (batteryLimits, bool) {
+	var limits batteryLimits
+
+	parts := strings.Split(s, "/")
+	if len(parts) != 3 {
+		return limits, false
+	}
+
+	values := [3]uint16{}
+	for i, part := range parts {
+		v, err := strconv.ParseUint(part, 10, 16)
+		if err != nil {
+			return limits, false
+		}
+		values[i] = uint16(v)
+	}
+
+	// A lower status must need a lower voltage, or the switch in batteryStatus
+	// can never reach it.
+	if !(values[0] > values[1] && values[1] > values[2] && values[2] > 0) {
+		return limits, false
+	}
+
+	limits.full, limits.medium, limits.low = values[0], values[1], values[2]
+
+	return limits, true
+}

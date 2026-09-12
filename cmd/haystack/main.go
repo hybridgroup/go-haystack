@@ -23,6 +23,8 @@ func main() {
 	dcdc0Flag := flag.Bool("dcdc0", false, "turn the DC/DC converter of the VDDH stage on. Needs a board powered through VDDH, and often gains nothing from a battery")
 	batteryPinFlag := flag.String("batterypin", "", "GPIO number that reads a battery divider, for example 2. Only an ESP32-C3 or ESP32-S3 board needs it")
 	batteryDividerFlag := flag.String("batterydivider", "", "ratio of the battery divider, for example 2/1. A single number is a ratio to 1")
+	batteryTypeFlag := flag.String("batterytype", "", "cell that the beacon uses, one of lipo, cr2032, cr1220 or aa-alkaline. Empty is lipo")
+	batteryThresholdsFlag := flag.String("batterythresholds", "", "full, medium and low battery voltages in millivolts, for example 2900/2750/2600. It wins over -batterytype")
 	keysFlag := flag.Int("keys", defaultKeyCount, "how many keys to generate for a device, which the beacon then uses in turn")
 	rotateFlag := flag.String("rotate", defaultKeyRotation, "how long the beacon uses each key, for example 5m. An empty value stops the rotation")
 	flag.Parse()
@@ -48,13 +50,15 @@ func main() {
 			return
 		}
 		opts := flashOptions{
-			verbose:        *verboseFlag,
-			battery:        *batteryFlag,
-			dcdc0:          *dcdc0Flag,
-			txPower:        *txPowerFlag,
-			batteryPin:     *batteryPinFlag,
-			batteryDivider: *batteryDividerFlag,
-			rotate:         *rotateFlag,
+			verbose:           *verboseFlag,
+			battery:           *batteryFlag,
+			dcdc0:             *dcdc0Flag,
+			txPower:           *txPowerFlag,
+			batteryPin:        *batteryPinFlag,
+			batteryDivider:    *batteryDividerFlag,
+			batteryType:       *batteryTypeFlag,
+			batteryThresholds: *batteryThresholdsFlag,
+			rotate:            *rotateFlag,
 		}
 		if err := flashDevice(args[1], args[2], opts); err != nil {
 			fmt.Println("failed to flash device:", err)
@@ -112,7 +116,11 @@ type flashOptions struct {
 	txPower        string
 	batteryPin     string
 	batteryDivider string
-	rotate         string
+	// batteryType and batteryThresholds set the voltages that give the battery
+	// status. batteryThresholds wins over batteryType.
+	batteryType       string
+	batteryThresholds string
+	rotate            string
 }
 
 // espTargets are the TinyGo targets that use the radio in an ESP32-C3 or
@@ -166,6 +174,12 @@ func flashDevice(name string, target string, opts flashOptions) error {
 	}
 	if opts.batteryDivider != "" {
 		keyVal += fmt.Sprintf(" -X main.BatteryDivider=%s", opts.batteryDivider)
+	}
+	if opts.batteryType != "" {
+		keyVal += fmt.Sprintf(" -X main.BatteryType=%s", opts.batteryType)
+	}
+	if opts.batteryThresholds != "" {
+		keyVal += fmt.Sprintf(" -X main.BatteryThresholds=%s", opts.batteryThresholds)
 	}
 
 	args := []string{"flash", "-target", target}

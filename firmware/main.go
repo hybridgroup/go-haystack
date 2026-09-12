@@ -59,10 +59,11 @@ func main() {
 
 	// This first reading must stay before adapter.Enable below. On an ESP32 it
 	// starts the ADC, which must not happen while the radio runs.
+	limits := batteryThresholds()
 	millivolts, hasBattery := readBatteryMillivolts()
 	status := byte(findmy.StatusBatteryFull)
 	if hasBattery {
-		status = batteryStatus(millivolts)
+		status = batteryStatus(millivolts, limits)
 		println("battery is", strconv.Itoa(int(millivolts)), "mV,", findmy.BatteryStatus(status))
 	}
 
@@ -154,7 +155,7 @@ func main() {
 			if !ok {
 				continue
 			}
-			newStatus := batteryStatus(millivolts)
+			newStatus := batteryStatus(millivolts, limits)
 			if newStatus == status {
 				continue
 			}

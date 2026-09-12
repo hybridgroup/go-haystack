@@ -155,8 +155,9 @@ This will use TinyGo to compile the firmware using your keys, and then flash it 
 For a device on a battery, add `-battery`, which turns the serial port off. Add
 `-txpower` to lower the radio transmit power, which saves more current but shortens
 the range. On an ESP32-C3 or ESP32-S3 board, add `-batterypin` and `-batterydivider` to
-read the battery. Add `-rotate` for a different time on each key. All flags go before the
-subcommand. See [Battery Powered Beacons](./firmware/README.md#battery-powered-beacons) and
+read the battery. Add `-batterytype` for a cell that is not a LiPo, such as a CR2032, or
+`-batterythresholds` for the voltages of any other cell. Add `-rotate` for a different
+time on each key. All flags go before the subcommand. See [Battery Powered Beacons](./firmware/README.md#battery-powered-beacons) and
 [Rotating Keys](#rotating-keys).
 
 ```shell
