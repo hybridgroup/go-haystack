@@ -41,6 +41,9 @@ second argument:
 cd firmware
 go run . KEY1,KEY2,KEY3 5m
 ```
+
+Use the advertisement keys from the `.keys` file of the device. See [Keys](./KEYS.md).
+
 ## TinyScan
 
 Go Haystack also includes TinyScan, a hardware scanner for local devices.
@@ -150,7 +153,7 @@ haystack keys DEVICENAME
 The keys will be saved in a file named `DEVICENAME.keys` and the configuration file for Haystack will be saved in `DEVICENAME.json`. Replace "DEVICENAME" with whatever you want to name the actual device.
 
 This makes a set of 12 keys, which the beacon uses in turn. Add `-keys` for a different
-number. See [Rotating Keys](#rotating-keys).
+number. See [Keys](./KEYS.md).
 
 
 2. Flash the hardware with the TinyGo target and the name of your device.
@@ -169,7 +172,7 @@ the range. On an ESP32-C3 or ESP32-S3 board, add `-batterypin` and `-batterydivi
 read the battery. Add `-batterytype` for a cell that is not a LiPo, such as a CR2032, or
 `-batterythresholds` for the voltages of any other cell. Add `-rotate` for a different
 time on each key. All flags go before the subcommand. See [Battery Powered Beacons](./firmware/README.md#battery-powered-beacons) and
-[Rotating Keys](#rotating-keys).
+[Keys](./KEYS.md#rotating-keys).
 
 ```shell
 haystack -battery -txpower=-8 flash DEVICENAME xiao-ble
@@ -189,35 +192,6 @@ Eventually, if your device is in range of any iPhone, they will appear in your M
 Note that it might take a while for the first data to show up.
 
 Have fun, be good!
-
-## Rotating Keys
-
-A beacon that always sends the same key can be followed by anybody who scans for it. To
-stop this, a device gets a set of keys, and the beacon uses them one after the other. The
-key and the Bluetooth address both change together, because the address is the first 6
-bytes of the key.
-
-`haystack keys` makes 12 keys, and the beacon uses each key for 5 minutes. The set lasts
-one hour and then starts again. The first key goes into `privateKey` in the JSON file and
-the others go into `additionalKeys`, which macless-haystack also fetches reports for, so
-the web UI shows one device with one history.
-
-Use `-keys` for the size of the set and `-rotate` for the time on each key:
-
-```shell
-haystack -keys=24 keys DEVICENAME
-haystack -rotate=15m flash DEVICENAME xiao-ble
-```
-
-More keys give a longer time before the set repeats, but macless-haystack then asks the
-endpoint for more keys at each refresh. A set of 24 keys with `-rotate=1h` covers a day.
-
-`-keys=1` gives the behavior of the older versions, which is one key for ever. An
-`-rotate` of `0s`, or an empty value, also keeps the first key for ever.
-
-The rotation needs both parts, so a device that already has a key file with one key keeps
-that one key until you make a new set. A device that gets a new set also needs its JSON
-file imported into macless-haystack again.
 
 ## How to test
 
