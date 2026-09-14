@@ -10,6 +10,19 @@ It uses [OpenHaystack](https://github.com/seemoo-lab/openhaystack) together with
 
 ![image of macless-haystack web UI](./images/macless-haystack.png)
 
+## Contents
+
+- [Build Your Own Beacon](#build-your-own-beacon)
+- [Linux Beacons](#linux-beacons)
+- [TinyScan](#tinyscan)
+- [How to install](#how-to-install)
+- [How to use](#how-to-use)
+- [How to test](#how-to-test)
+- [Keys](./KEYS.md)
+- [Testing](./TESTING.md)
+- [Firmware](./firmware/README.md)
+- [TinyScan hardware](./tinyscan/README.md)
+
 ## Build Your Own Beacon
 
 This package provides firmware written using [TinyGo](https://tinygo.org/) and the [TinyGo Bluetooth package](https://github.com/tinygo-org/bluetooth).
