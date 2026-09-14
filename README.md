@@ -201,10 +201,5 @@ The unit tests run on the host, so they need no hardware:
 go test ./...
 ```
 
-The firmware and TinyScan code only compiles for a microcontroller. To check it, build one
-of the targets:
-
-```shell
-tinygo build -o /dev/null -target=xiao-ble ./firmware
-tinygo build -o /dev/null -stack-size 8kb -target=clue ./tinyscan
-```
+See [Testing](./TESTING.md) for the microcontroller builds and for the tests on the
+hardware.
