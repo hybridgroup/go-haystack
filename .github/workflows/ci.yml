@@ -34,6 +34,9 @@ jobs:
   tinygo:
     name: tinygo ${{ matrix.target }}
     runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/tinygo-org/tinygo-dev
+      options: --user root
     strategy:
       fail-fast: false
       matrix:
@@ -51,11 +54,6 @@ jobs:
           - {dir: ./tinyscan, target: pyportal, flags: -stack-size 8kb}
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
-        with:
-          go-version-file: go.mod
-          cache: true
-      - uses: acifani/setup-tinygo@v2
-        with:
-          tinygo-version: '0.42.0'
+      - run: tinygo version
+      - run: go env -w GOFLAGS=-buildvcs=false
       - run: tinygo build -o /dev/null -size short ${{ matrix.flags }} -target=${{ matrix.target }} ${{ matrix.dir }}
