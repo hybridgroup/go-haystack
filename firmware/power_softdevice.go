@@ -4,5 +4,13 @@
 
 package main
 
+import "device/nrf"
+
 // dcdcAvailable tells if the radio has the DC/DC regulator calls.
 const dcdcAvailable = true
+
+// setLowPowerMode cancels the constant latency mode, which can be on when the firmware starts.
+// See https://docs.nordicsemi.com/bundle/ps_nrf52840/page/power.html, sub power modes.
+func setLowPowerMode() {
+	nrf.POWER.TASKS_LOWPWR.Set(1)
+}

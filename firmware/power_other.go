@@ -6,3 +6,5 @@ package main
 
 // dcdcAvailable tells if the radio has the DC/DC regulator calls.
 const dcdcAvailable = false
+
+func setLowPowerMode() {}

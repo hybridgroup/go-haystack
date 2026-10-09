@@ -37,6 +37,9 @@ const batteryCheckInterval = 15 * time.Minute
 var adapter = bluetooth.DefaultAdapter
 
 func main() {
+	// This must stay first. The SoftDevice blocks writes to the POWER registers after Enable.
+	setLowPowerMode()
+
 	// wait for USB serial to be available
 	time.Sleep(2 * time.Second)
 
