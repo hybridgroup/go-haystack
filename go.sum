@@ -41,12 +41,12 @@ gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405/go.mod h1:Co6ibVJAznAaIkqp8
 gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c/go.mod h1:K4uyk7z7BCEPqu6E+C64Yfv1cQ7kz7rIZviUmN+EgEM=
 gopkg.in/yaml.v3 v3.0.1 h1:fxVm/GzAzEWqLHuvctI91KS9hhNmmWOoWu0XTYJS7CA=
 gopkg.in/yaml.v3 v3.0.1/go.mod h1:K4uyk7z7BCEPqu6E+C64Yfv1cQ7kz7rIZviUmN+EgEM=
-tinygo.org/x/bluetooth v0.16.1-0.20260914093206-e8380cd538d9 h1:en54ciQ6LYOhlLNwHsGnVbTqxVNAMgLCxBPwoac+PzM=
-tinygo.org/x/bluetooth v0.16.1-0.20260914093206-e8380cd538d9/go.mod h1:MRj/k5a7rBNIRpC0bAX0VNuSilv+JD83thE4zjxs2EM=
+tinygo.org/x/bluetooth v0.16.1-0.20260927113321-90b920b4bac7 h1:1pb20szKd2SEs7fE7Fxfd9O8KR1vs6qz4mRul9dBbqE=
+tinygo.org/x/bluetooth v0.16.1-0.20260927113321-90b920b4bac7/go.mod h1:StLLMCxl2U5U4G7V5zovDx/r64haH5AtbCtHTnjuSxY=
 tinygo.org/x/drivers v0.36.0 h1:F0x342A6GWqh6abtCa57uAxCyz/b9MbGzvIVvIf+gpE=
 tinygo.org/x/drivers v0.36.0/go.mod h1:DQgKyHkB4G6IEOKVTAjApbKnWGwESN91EVJO+nMOE9Y=
-tinygo.org/x/espradio v0.3.0 h1:hJ81KqD3vXH78CIqoDJSDZ+em0E+x/h1ks0LSRZxk+E=
-tinygo.org/x/espradio v0.3.0/go.mod h1:bib3tci08oBCaSE/V6BzpKiymkjMmhChCL8OR3sbDGM=
+tinygo.org/x/espradio v0.3.1-0.20260925094528-b51c8a513407 h1:ynAmRldSnTRuUMhrfEVBen4KY0UG4F2rz/W/IoKELos=
+tinygo.org/x/espradio v0.3.1-0.20260925094528-b51c8a513407/go.mod h1:bib3tci08oBCaSE/V6BzpKiymkjMmhChCL8OR3sbDGM=
 tinygo.org/x/tinyfont v0.7.0 h1:Ju901eGRThlHLoti9K7myMYyv4phd3I0DrJwc14NTTU=
 tinygo.org/x/tinyfont v0.7.0/go.mod h1:onflMSkpWl7r7j4MIqhPEVV39pn7yL4N3MOePl3G+G8=
 tinygo.org/x/tinyterm v0.5.0 h1:HusDSiTM290KzYM4+2X+ZfNM6Ll1yu13LpvIszlQE9M=

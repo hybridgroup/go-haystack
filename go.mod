@@ -3,7 +3,7 @@ module github.com/hybridgroup/go-haystack
 go 1.25.0
 
 require (
-	tinygo.org/x/bluetooth v0.16.1-0.20260914093206-e8380cd538d9
+	tinygo.org/x/bluetooth v0.16.1-0.20260927113321-90b920b4bac7
 	tinygo.org/x/drivers v0.36.0
 	tinygo.org/x/tinyfont v0.7.0
 	tinygo.org/x/tinyterm v0.5.0
@@ -22,5 +22,5 @@ require (
 	github.com/tinygo-org/pio v0.3.0 // indirect
 	golang.org/x/exp v0.0.0-20260727155853-b88d891fe743 // indirect
 	golang.org/x/sys v0.11.0 // indirect
-	tinygo.org/x/espradio v0.3.0 // indirect
+	tinygo.org/x/espradio v0.3.1-0.20260925094528-b51c8a513407 // indirect
 )
