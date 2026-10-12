@@ -28,6 +28,8 @@ func main() {
 	keysFlag := flag.Int("keys", defaultKeyCount, "how many keys to generate for a device, which the beacon then uses in turn")
 	onlyMineFlag := flag.Bool("onlymine", false, "the scanner shows only your own devices")
 	rotateFlag := flag.String("rotate", defaultKeyRotation, "how long the beacon uses each key, for example 5m. An empty value stops the rotation")
+	sleepFlag := flag.String("sleep", "", "how long an ESP32-C3 stays in deep sleep between advertising periods, for example 30s. Empty turns deep sleep off")
+	awakeFlag := flag.String("awake", "", "how long the beacon advertises before each deep sleep, for example 2s. Empty is 2s")
 	flag.Parse()
 
 	args := flag.Args()
@@ -60,6 +62,8 @@ func main() {
 			batteryType:       *batteryTypeFlag,
 			batteryThresholds: *batteryThresholdsFlag,
 			rotate:            *rotateFlag,
+			sleep:             *sleepFlag,
+			awake:             *awakeFlag,
 		}
 		if err := flashDevice(args[1], args[2], opts); err != nil {
 			fmt.Println("failed to flash device:", err)
@@ -134,6 +138,9 @@ type flashOptions struct {
 	batteryType       string
 	batteryThresholds string
 	rotate            string
+	// sleep and awake set the deep sleep cycle of an ESP32-C3.
+	sleep string
+	awake string
 }
 
 // espTargets are the TinyGo targets that use the radio in an ESP32-C3 or
@@ -193,6 +200,13 @@ func flashDevice(name string, target string, opts flashOptions) error {
 	}
 	if opts.batteryThresholds != "" {
 		keyVal += fmt.Sprintf(" -X main.BatteryThresholds=%s", opts.batteryThresholds)
+	}
+
+	if opts.sleep != "" {
+		keyVal += fmt.Sprintf(" -X main.SleepInterval=%s", opts.sleep)
+		if opts.awake != "" {
+			keyVal += fmt.Sprintf(" -X main.AwakeTime=%s", opts.awake)
+		}
 	}
 
 	args := []string{"flash", "-target", target}

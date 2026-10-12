@@ -11,6 +11,9 @@
 //
 // For a device on a battery, see the power settings in README.md.
 //
+// For an ESP32-C3 that advertises for 2 seconds, then sleeps for 30 seconds:
+// -ldflags="-X main.AdvertisingKey='KEY' -X main.SleepInterval=30s -X main.AwakeTime=2s"
+//
 // For Linux:
 // go run . SGVsbG8sIFdvcmxkIQ==
 // go run . KEY1,KEY2 5m
@@ -37,16 +40,14 @@ const batteryCheckInterval = 15 * time.Minute
 var adapter = bluetooth.DefaultAdapter
 
 func main() {
-	// wait for USB serial to be available
-	time.Sleep(2 * time.Second)
+	// A wake from deep sleep does not wait for USB serial.
+	if !wokeFromDeepSleep() {
+		time.Sleep(2 * time.Second)
+	}
 
 	keys := advertisingKeys()
 	if len(keys) == 0 {
 		fail("no advertising key")
-	}
-	key, err := keyData(keys[0])
-	if err != nil {
-		fail("failed to get key data: " + err.Error())
 	}
 
 	// A beacon with one key keeps it for ever, so the interval has no use.
@@ -54,17 +55,50 @@ func main() {
 	if len(keys) == 1 {
 		rotating = false
 	}
+
+	sleep, awake, sleeping := sleepTimes()
+	if sleeping && !deepSleepAvailable {
+		println("deep sleep is not available on this chip")
+		sleeping = false
+	}
+
+	// A sleeping beacon starts from reset each time, so the time since power
+	// on gives the key.
+	index := 0
+	if sleeping && rotating {
+		index = keyIndex(rtcTime(), rotation, len(keys))
+	}
+	key, err := keyData(keys[index])
+	if err != nil {
+		fail("failed to get key data: " + err.Error())
+	}
 	println("keys are", strconv.Itoa(len(keys)), "and rotation is", rotationText(rotating))
-	println("key 0 is", keys[0], "(", len(key), "bytes)")
+	println("key", strconv.Itoa(index), "is", keys[index], "(", len(key), "bytes)")
 
 	// This first reading must stay before adapter.Enable below. On an ESP32 it
 	// starts the ADC, which must not happen while the radio runs.
 	limits := batteryThresholds()
-	millivolts, hasBattery := readBatteryMillivolts()
 	status := byte(findmy.StatusBatteryFull)
-	if hasBattery {
-		status = batteryStatus(millivolts, limits)
-		println("battery is", strconv.Itoa(int(millivolts)), "mV,", findmy.BatteryStatus(status))
+	cached := false
+	var epoch uint16
+	if sleeping {
+		epoch = batteryEpoch(rtcTime())
+		if saved, ok := unpackSleepState(loadSleepState()); ok && saved.batteryEpoch == epoch {
+			status = saved.status
+			cached = true
+		}
+	}
+	hasBattery := false
+	if !cached {
+		var millivolts uint16
+		millivolts, hasBattery = readBatteryMillivolts()
+		if hasBattery {
+			status = batteryStatus(millivolts, limits)
+			println("battery is", strconv.Itoa(int(millivolts)), "mV,", findmy.BatteryStatus(status))
+		}
+	}
+	if sleeping {
+		saveSleepState(packSleepState(sleepState{status: status, batteryEpoch: epoch}))
 	}
 
 	// The payload has no space left. A non-connectable advertisement holds 31
@@ -116,6 +150,12 @@ func main() {
 	address, _ := adapter.Address()
 	println("FindMy device using", address.MAC.String())
 
+	if sleeping {
+		time.Sleep(awake)
+		println("deep sleep for", SleepInterval)
+		deepSleep(sleep)
+	}
+
 	// A Nordic radio advertises on its own from here, so the CPU only wakes to
 	// change the key or to read the battery. A radio on the HCI path keeps a
 	// poll loop running.
@@ -127,7 +167,6 @@ func main() {
 		nextRotation = time.Now().Add(rotation)
 	}
 
-	index := 0
 	for {
 		time.Sleep(sleepTime(time.Now(), nextBattery, nextRotation))
 		now := time.Now()

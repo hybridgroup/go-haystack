@@ -49,3 +49,11 @@ var BatteryType string
 // BatteryThresholds gives the battery voltage thresholds. An operating system
 // does not read a battery here, so it stays empty.
 var BatteryThresholds string
+
+// SleepInterval turns deep sleep on. An operating system does not give this
+// control, so it stays empty here.
+var SleepInterval string
+
+// AwakeTime is how long the beacon advertises before each deep sleep. An
+// operating system does not give this control, so it stays empty here.
+var AwakeTime string
