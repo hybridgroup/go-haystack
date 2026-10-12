@@ -97,8 +97,10 @@ Some rules for deep sleep:
 - The radio takes some hundreds of milliseconds to start on each wake, and this uses
   current. A very short `SleepInterval` gains little.
 - Key rotation and battery checks use the RTC timer, which keeps counting in deep sleep.
-- The USB serial port stops in deep sleep. To flash the board again, hold BOOT and push
-  RESET, or flash while the beacon is awake.
+- The USB serial port shows the messages of the first cycle after a reset only. In deep
+  sleep the port stays on the bus, so the computer does not connect to it again on a wake.
+- The board does not reply to the flash tool in deep sleep. To flash it again, hold BOOT
+  and push RESET.
 
 The firmware ignores these values on all other boards.
 
