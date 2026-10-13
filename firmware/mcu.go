@@ -40,3 +40,11 @@ var BatteryThresholds string
 // value keeps the first key for ever. Set it with
 // -ldflags "-X main.KeyRotation=5m".
 var KeyRotation string
+
+// SleepInterval is how long an ESP32-C3 stays in deep sleep between two
+// advertising periods, such as "30s". An empty value turns deep sleep off.
+var SleepInterval string
+
+// AwakeTime is how long the beacon advertises before each deep sleep, such
+// as "2s". An empty value gives 2 seconds.
+var AwakeTime string

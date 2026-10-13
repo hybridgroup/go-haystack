@@ -65,11 +65,44 @@ The firmware ignores `DCDC` and `DCDC0` on every other board. `TxPower` prints a
 there, and the radio keeps its default power.
 
 An ESP32-C3 or ESP32-S3 beacon uses much more current than a Nordic beacon. The firmware
-does not sleep on these boards, and the Bluetooth package keeps a loop that reads the
-radio every 5 milliseconds. Use a larger battery, or use a Nordic board if the device must
-run for a long time. The `-serial=none` flag gains almost nothing on these boards, because
+does not sleep on these boards by default, and the Bluetooth package keeps a loop that
+reads the radio every 5 milliseconds. Use a larger battery, use deep sleep on an ESP32-C3
+(see below), or use a Nordic board if the device must run for a long time. The `-serial=none` flag gains almost nothing on these boards, because
 the console is part of the USB block that stays on, so `haystack flash -battery` does not
 use it there.
+
+### Deep sleep on an ESP32-C3
+
+An ESP32-C3 beacon can advertise for a short time, then go into deep sleep. A timer wakes
+the chip, and the chip starts again from reset. This works like the
+[deep sleep demo from Seeed](https://wiki.seeedstudio.com/xiao_esp32c6_getting_started/#demo2-deep-sleep-with-timer-wake-up).
+Deep sleep is off unless you ask for it:
+
+```shell
+haystack -sleep=30s -awake=2s flash DEVICENAME xiao-esp32c3
+```
+
+The same values with `tinygo` alone:
+
+```
+-ldflags="-X main.AdvertisingKey='$ADVKEY' -X main.SleepInterval=30s -X main.AwakeTime=2s"
+```
+
+`SleepInterval` is the time in deep sleep. `AwakeTime` is the time that the beacon
+advertises before each sleep, and it is 2 seconds if you do not give it.
+
+Some rules for deep sleep:
+
+- A phone cannot find the beacon while it sleeps, so it finds the beacon less often.
+- The radio takes some hundreds of milliseconds to start on each wake, and this uses
+  current. A very short `SleepInterval` gains little.
+- Key rotation and battery checks use the RTC timer, which keeps counting in deep sleep.
+- The USB serial port shows the messages of the first cycle after a reset only. In deep
+  sleep the port stays on the bus, so the computer does not connect to it again on a wake.
+- The board does not reply to the flash tool in deep sleep. To flash it again, hold BOOT
+  and push RESET.
+
+The firmware ignores these values on all other boards.
 
 ### Battery status
 
