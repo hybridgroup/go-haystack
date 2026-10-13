@@ -104,6 +104,21 @@ func deepSleep(d time.Duration) {
 
 	rtc := esp.RTC_CNTL
 
+	// Run the CPU from the crystal and stop the PLL. See rtc_clk_cpu_freq_set_xtal
+	// in esp-idf components/esp_hw_support/port/esp32c3/rtc_clk.c.
+	esp.SYSTEM.SetSYSCLK_CONF_PRE_DIV_CNT(0)
+	esp.SYSTEM.SetSYSCLK_CONF_SOC_CLK_SEL(0)
+	rtc.OPTIONS0.ClearBits(esp.RTC_CNTL_OPTIONS0_BBPLL_FORCE_PU |
+		esp.RTC_CNTL_OPTIONS0_BBPLL_I2C_FORCE_PU |
+		esp.RTC_CNTL_OPTIONS0_BB_I2C_FORCE_PU |
+		esp.RTC_CNTL_OPTIONS0_XTL_FORCE_PU)
+	rtc.OPTIONS0.SetBits(esp.RTC_CNTL_OPTIONS0_BBPLL_FORCE_PD |
+		esp.RTC_CNTL_OPTIONS0_BBPLL_I2C_FORCE_PD |
+		esp.RTC_CNTL_OPTIONS0_BB_I2C_FORCE_PD)
+	rtc.SetANA_CONF_PLLA_FORCE_PU(0)
+	rtc.SetANA_CONF_PLLA_FORCE_PD(1)
+	rtc.RTC_CNTL.ClearBits(esp.RTC_CNTL_RTC_CNTL_DBOOST_FORCE_PU)
+
 	// Reset forces these domains on. See rtc_init in esp-idf
 	// components/esp_hw_support/port/esp32c3/rtc_init.c.
 	rtc.DIG_PWC.ClearBits(esp.RTC_CNTL_DIG_PWC_DG_WRAP_FORCE_PU |
@@ -129,8 +144,6 @@ func deepSleep(d time.Duration) {
 	rtc.SetANA_CONF_RFRX_PBUS_PU(0)
 	rtc.SetANA_CONF_TXRF_I2C_PU(0)
 	rtc.SetANA_CONF_SAR_I2C_PU(0)
-	rtc.SetOPTIONS0_BB_I2C_FORCE_PU(0)
-	rtc.SetOPTIONS0_XTL_FORCE_PU(0)
 	rtc.SetCLK_CONF_XTAL_GLOBAL_FORCE_NOGATING(0)
 	rtc.SetCLK_CONF_CK8M_FORCE_PU(0)
 	rtc.SetCLK_CONF_CK8M_FORCE_NOGATING(0)
